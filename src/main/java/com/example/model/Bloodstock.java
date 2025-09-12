@@ -7,6 +7,9 @@ import jakarta.persistence.GenerationType;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+
 
 @Entity
 @Table(name = "stock")
@@ -20,6 +23,10 @@ public class Bloodstock {
     @JsonProperty("blood_type")
     private String blood_type;
     private int quantidade;
+
+    @ManyToOne
+    @JoinColumn(name = "fk_company_id", nullable = false)
+    private Company company;
 
     // Getters e Setters
     public UUID getId() {
@@ -44,5 +51,13 @@ public class Bloodstock {
 
     public void setQuantidade(int quantidade) {
         this.quantidade = quantidade;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
     }
 }

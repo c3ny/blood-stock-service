@@ -29,6 +29,12 @@ public class BloodstockController {
         return service.listarTodos();
     }
 
+    @PostMapping("/{companyId}")
+    public Bloodstock criar(@RequestBody Bloodstock bloodstock, @PathVariable UUID companyId) {
+        return service.salvar(bloodstock, companyId);
+    }
+
+
     @PutMapping("/{id}")
     public Bloodstock atualizar(@PathVariable UUID id, @RequestParam int quantidade) {
         return service.atualizarQuantidade(id, quantidade);
