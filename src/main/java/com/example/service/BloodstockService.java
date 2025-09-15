@@ -26,14 +26,14 @@ public class BloodstockService {
 
 	public Bloodstock updateQuantity(UUID id, int quantity) {
 		Bloodstock stock = stockRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Estoque não encontrado"));
+				.orElseThrow(() -> new RuntimeException("Stock not found"));
 		stock.setQuantity(quantity);
 		return stockRepository.save(stock);
 	}
 
 	public Bloodstock save(Bloodstock bloodstock, UUID companyId) {
 		Company company = companyRepository.findById(companyId)
-				.orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+				.orElseThrow(() -> new RuntimeException("Company not found"));
 		bloodstock.setCompany(company);
 		return stockRepository.save(bloodstock);
 	}

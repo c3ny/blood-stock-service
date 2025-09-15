@@ -1,27 +1,23 @@
 package com.example.blood_stock_service.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.*;
+
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Table;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
 
 
 @Entity
 @Table(name = "stock")
-
 public class Bloodstock {
 
     @Id
     @GeneratedValue
     private UUID id;
 
+    @Column(name = "blood_type")
     @JsonProperty("blood_type")
-    private String blood_type;
+    private String bloodType;
+
     private int quantity;
 
     @ManyToOne
@@ -29,35 +25,15 @@ public class Bloodstock {
     private Company company;
 
     // Getters e Setters
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-    @JsonProperty("blood_type")
-    public String getBloodType() {
-        return blood_type;
-    }
-    @JsonProperty("blood_type")
-    public void setBloodType(String blood_type) {
-        this.blood_type = blood_type;
-    }
+    public String getBloodType() { return bloodType; }
+    public void setBloodType(String bloodType) { this.bloodType = bloodType; }
 
-    public int setQuantity() {
-        return quantity;
-    }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public Company getCompany() {
-        return company;
-    }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
 }
