@@ -20,25 +20,25 @@ public class BloodstockService {
 		this.companyRepository = companyRepository;
 	}
 
-	public List<Bloodstock> listarTodos() {
+	public List<Bloodstock> listAll() {
 		return stockRepository.findAll();
 	}
 
-	public Bloodstock atualizarQuantidade(UUID id, int quantidade) {
-		Bloodstock estoque = stockRepository.findById(id)
+	public Bloodstock updateQuantity(UUID id, int quantity) {
+		Bloodstock stock = stockRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Estoque não encontrado"));
-		estoque.setQuantidade(quantidade);
-		return stockRepository.save(estoque);
+		stock.setQuantity(quantity);
+		return stockRepository.save(stock);
 	}
 
-	public Bloodstock salvar(Bloodstock bloodstock, UUID companyId) {
+	public Bloodstock save(Bloodstock bloodstock, UUID companyId) {
 		Company company = companyRepository.findById(companyId)
 				.orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
 		bloodstock.setCompany(company);
 		return stockRepository.save(bloodstock);
 	}
 
-	public Bloodstock salvar(Bloodstock bloodstock) {
+	public Bloodstock save(Bloodstock bloodstock) {
 		return stockRepository.save(bloodstock);
 	}
 

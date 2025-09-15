@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/estoque")
+@RequestMapping("/api/stock")
 @CrossOrigin(origins = "*")
 public class BloodstockController {
 
@@ -19,24 +19,24 @@ public class BloodstockController {
     }
 
     @PostMapping
-    public Bloodstock criar(@RequestBody Bloodstock bloodstock) {
-        return service.salvar(bloodstock);
+    public Bloodstock create(@RequestBody Bloodstock bloodstock) {
+        return service.save(bloodstock);
     }
 
 
     @GetMapping
-    public List<Bloodstock> listar() {
-        return service.listarTodos();
+    public List<Bloodstock> list() {
+        return service.listAll();
     }
 
     @PostMapping("/{companyId}")
-    public Bloodstock criar(@RequestBody Bloodstock bloodstock, @PathVariable UUID companyId) {
-        return service.salvar(bloodstock, companyId);
+    public Bloodstock create(@RequestBody Bloodstock bloodstock, @PathVariable UUID companyId) {
+        return service.save(bloodstock, companyId);
     }
 
 
     @PutMapping("/{id}")
-    public Bloodstock atualizar(@PathVariable UUID id, @RequestParam int quantidade) {
-        return service.atualizarQuantidade(id, quantidade);
+    public Bloodstock update(@PathVariable UUID id, @RequestParam int quantity) {
+        return service.updateQuantity(id, quantity);
     }
 }

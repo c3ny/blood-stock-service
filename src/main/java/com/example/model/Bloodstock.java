@@ -22,7 +22,7 @@ public class Bloodstock {
 
     @JsonProperty("blood_type")
     private String blood_type;
-    private int quantidade;
+    private int quantity;
 
     @ManyToOne
     @JoinColumn(name = "fk_company_id", nullable = false)
@@ -45,12 +45,12 @@ public class Bloodstock {
         this.blood_type = blood_type;
     }
 
-    public int getQuantidade() {
-        return quantidade;
+    public int setQuantity() {
+        return quantity;
     }
 
-    public void setQuantidade(int quantidade) {
-        this.quantidade = quantidade;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
     public Company getCompany() {
