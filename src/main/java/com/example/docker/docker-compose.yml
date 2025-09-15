@@ -1,0 +1,21 @@
+version: "3.9"
+
+
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: bloodstock-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: 1
+      POSTGRES_DB: SangueSolidario
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+volumes:
+    db-data:
