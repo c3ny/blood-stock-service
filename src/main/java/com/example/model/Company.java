@@ -1,4 +1,4 @@
-package com.example.blood_stock_service.model;
+package com.example.model;
 
 import jakarta.persistence.*;
 import java.util.UUID;

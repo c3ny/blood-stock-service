@@ -1,7 +1,7 @@
-package com.example.blood_stock_service.controller;
+package com.example.controler;
 
-import com.example.blood_stock_service.model.Bloodstock;
-import com.example.blood_stock_service.service.BloodstockService;
+import com.example.model.Bloodstock;
+import com.example.service.BloodstockService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

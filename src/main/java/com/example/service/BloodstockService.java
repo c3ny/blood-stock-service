@@ -1,9 +1,9 @@
-package com.example.blood_stock_service.service;
+package com.example.service;
 
-import com.example.blood_stock_service.model.Bloodstock;
-import com.example.blood_stock_service.model.Company;
-import com.example.blood_stock_service.repository.StockRepository;
-import com.example.blood_stock_service.repository.CompanyRepository;
+import com.example.model.Bloodstock;
+import com.example.model.Company;
+import com.example.respository.StockRepository;
+import com.example.respository.CompanyRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
