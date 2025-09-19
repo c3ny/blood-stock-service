@@ -38,6 +38,20 @@ public class BloodstockService {
 		return stockRepository.save(bloodstock);
 	}
 
+    public Bloodstock save(UUID companyId, Bloodstock bloodStock) {
+        // Busca a company pelo ID
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        // Associa a company ao estoque de sangue
+        bloodStock.setCompany(company);
+
+        // Salva no banco
+        return stockRepository.save(bloodStock);
+    }
+
+
+
 	public Bloodstock save(Bloodstock bloodstock) {
 		return stockRepository.save(bloodstock);
 	}
