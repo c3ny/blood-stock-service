@@ -1,32 +1,65 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.5'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.14'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
+}
+
+javafx {
+    version = "17.0.12"
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.postgresql:postgresql'
+    implementation "org.openjfx:javafx-controls:17.0.12"
+    implementation "org.openjfx:javafx-fxml:17.0.12"
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+}
+
+// ==================
+// Task para o Backend (Spring Boot)
+// ==================
+task runBackend(type: JavaExec) {
+    group = 'application'
+    description = 'Roda apenas o backend Spring Boot'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('com.example.BloodStockServiceApplication')
+}
+
+// ==================
+// Task para o Frontend (JavaFX)
+// ==================
+task runFrontend(type: JavaExec) {
+    group = 'application'
+    description = 'Roda apenas o frontend JavaFX'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('com.example.view.BloodstockForm')
+    jvmArgs = [
+            '--module-path', configurations.runtimeClasspath.filter { it.name.startsWith("javafx") }.collect { it.absolutePath }.join(File.pathSeparator),
+            '--add-modules', 'javafx.controls,javafx.fxml'
+    ]
 }
