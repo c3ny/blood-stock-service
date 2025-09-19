@@ -1,9 +1,8 @@
-package com.example.blood_stock_service.controller;
+package com.example.controler;
 
-import com.example.blood_stock_service.model.Bloodstock;
-import com.example.blood_stock_service.service.BloodstockService;
+import com.example.model.Bloodstock;
+import com.example.service.BloodstockService;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +32,6 @@ public class BloodstockController {
     public Bloodstock create(@RequestBody Bloodstock bloodstock, @PathVariable UUID companyId) {
         return service.save(bloodstock, companyId);
     }
-
 
     @PutMapping("/{id}")
     public Bloodstock update(@PathVariable UUID id, @RequestParam int quantity) {

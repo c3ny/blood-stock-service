@@ -1,6 +1,6 @@
-package com.example.blood_stock_service.repository;
+package com.example.respository;
 
-import com.example.blood_stock_service.model.Company;
+import com.example.model.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,10 +1,7 @@
-package com.example.blood_stock_service;
+package com.example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-
-
 
 @SpringBootApplication(scanBasePackages = {
 		"com.example.blood_stock_service",
