@@ -1,6 +1,7 @@
 package com.example.view;
 
 import com.example.model.Company;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -15,9 +16,12 @@ import javafx.util.StringConverter;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
+import javafx.util.StringConverter;
 
 public class BloodstockForm extends Application {
 

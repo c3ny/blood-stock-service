@@ -34,6 +34,7 @@ public class BloodstockService {
 	public Bloodstock save(Bloodstock bloodstock, UUID companyId) {
 		Company company = companyRepository.findById(companyId)
 				.orElseThrow(() -> new RuntimeException("Company not found"));
+
 		bloodstock.setCompany(company);
 		return stockRepository.save(bloodstock);
 	}

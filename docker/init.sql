@@ -1,12 +1,6 @@
 -- Habilitar extensão para gerar UUID
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Cria o banco de dados
-CREATE DATABASE "SangueSolidario";
-
--- Conecta ao banco
-\c SangueSolidario;
-
 -- Tabela stock (exemplo anterior)
 CREATE TABLE stock (
     id SERIAL PRIMARY KEY,
