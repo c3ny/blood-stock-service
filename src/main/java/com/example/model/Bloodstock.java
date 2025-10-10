@@ -6,12 +6,21 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.example.entity.Company;
 
+@NamedQuery(
+        name = "Bloodstock.findAllByCompanyId",
+        query = "SELECT b FROM Bloodstock b WHERE b.company.id = :companyId"
+)
 @Entity
 @Table(name = "stock")
 public class Bloodstock {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "UUID")
+    @org.hibernate.annotations.GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "blood_type")
