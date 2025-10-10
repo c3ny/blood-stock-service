@@ -30,7 +30,11 @@ import com.itextpdf.layout.element.Table;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +43,7 @@ import java.util.UUID;
 
 public class BloodstockForm extends Application {
 
-    private static final String BASE_URL = "http://localhost:8080/api/stock/";
+    private static final String BASE_URL = "http://localhost:8080/api/stock";
     private static final String COMPANY_URL = "http://localhost:8080/api/company";
 
     private VBox dashboardContainer; // variável de instância correta
@@ -50,6 +54,8 @@ public class BloodstockForm extends Application {
     private Label statusLabel;
     private Label selectionLabel;
     private TableView<Bloodstock> tableView;
+    private String selectedMovementType = null;
+
 
     @Override
     public void start(Stage stage) {
@@ -62,10 +68,37 @@ public class BloodstockForm extends Application {
         tableView = new TableView<>();
         dashboardContainer = new VBox();
 
-        quantityField.setPromptText("Quantidade");
-        quantityField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal.matches("\\d*")) quantityField.setText(oldVal);
+        Label movementLabel = new Label("Selecione o tipo de movimentação:");
+        Button entradaButton = new Button("Entrada");
+        Button saidaButton = new Button("Saída");
+
+        entradaButton.setStyle("-fx-background-color: #43a047; -fx-text-fill: white; -fx-font-weight: bold;");
+        saidaButton.setStyle("-fx-background-color: #e53935; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        HBox movementButtons = new HBox(10, entradaButton, saidaButton);
+        movementButtons.setAlignment(Pos.CENTER);
+
+    // Campo de quantidade inicialmente invisível
+        quantityField.setVisible(false);
+
+    // Label para indicar o tipo selecionado
+        Label selectedMovementLabel = new Label();
+        selectedMovementLabel.setStyle("-fx-font-weight: bold;");
+
+    // Ação dos botões
+        entradaButton.setOnAction(e -> {
+                selectedMovementType = "Entrada";
+            selectedMovementLabel.setText("Movimentação: Entrada");
+            quantityField.setVisible(true);
         });
+
+        saidaButton.setOnAction(e -> {
+            selectedMovementType = "Saída";
+            selectedMovementLabel.setText("Movimentação: Saída");
+            quantityField.setVisible(true);
+        });
+
+
 
         setupCompanyComboBox();
         setupBloodComboBox();
@@ -79,7 +112,7 @@ public class BloodstockForm extends Application {
             showPreview(buildReportContent());
         });
 
-        VBox root = new VBox(15, dashboardContainer, reportButton, companyComboBox, bloodComboBox, quantityField, submitButton, statusLabel, selectionLabel, tableView);
+        VBox root = new VBox(15, dashboardContainer,movementLabel, movementButtons, selectedMovementLabel, reportButton, companyComboBox, bloodComboBox, quantityField, submitButton, statusLabel, selectionLabel, tableView);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: white;");
 
@@ -147,7 +180,7 @@ public class BloodstockForm extends Application {
     private void loadStockForCompany(UUID companyId) {
         new Thread(() -> {
             try {
-                URL url = new URL(BASE_URL + "company/" + companyId);
+                URL url = new URL(BASE_URL + "/company/" + companyId);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Accept", "application/json");
@@ -181,43 +214,85 @@ public class BloodstockForm extends Application {
         if (selectedCompany == null) { showError("Selecione uma empresa!"); return; }
         if (selectedBloodType == null) { showError("Selecione um tipo sanguíneo!"); return; }
 
+        String movementType = selectedMovementType;
+        if (movementType == null) {
+            showError("Selecione Entrada ou Saída antes de continuar!");
+            return;
+        }
+
+
         new Thread(() -> {
             try {
-                int quantity = Integer.parseInt(quantityField.getText());
+                int movement = Integer.parseInt(quantityField.getText());
+                // se for saída, transforma em negativo
+                if ("Saída".equals(movementType)) {
+                    movement = -movement;
+                }
+                if (movement == 0) { showError("Quantidade não pode ser zero!"); return; }
+
                 UUID companyId = selectedCompany.getId();
 
+                // Verificar se já existe o Bloodstock no TableView
+                Bloodstock existingStock = tableView.getItems().stream()
+                        .filter(b -> selectedBloodType.equals(b.getBloodType()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existingStock != null) {
+                    // Atualiza localmente antes de enviar
+                    existingStock.setQuantity(existingStock.getQuantity() + movement);
+                    existingStock.setUpdateDate(LocalDate.now());
+                    tableView.refresh();
+                } else {
+                    showError("Estoque não encontrado para este tipo sanguíneo!");
+                    return;
+                }
+                Platform.runLater(() -> showBloodstockDashboard(tableView.getItems(), dashboardContainer, tableView));
+
+
+                // Preparar JSON para envio
                 Map<String, Object> data = new HashMap<>();
-                data.put("blood_type", selectedBloodType);
-                data.put("quantity", quantity);
+                data.put("bloodstockId", existingStock.getId().toString());
+                data.put("quantity", movement);
 
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.registerModule(new JavaTimeModule());
                 String json = mapper.writeValueAsString(data);
 
-                URL url = new URL(BASE_URL + "company/" + companyId);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                conn.setDoOutput(true);
+                // Criar HttpClient e enviar POST
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(BASE_URL + "/company/" + companyId + "/movement"))
+                        .POST(HttpRequest.BodyPublishers.ofString(json))
+                        .header("Content-Type", "application/json")
+                        .build();
 
-                try (OutputStream os = conn.getOutputStream()) { os.write(json.getBytes()); }
-
-                int responseCode = conn.getResponseCode();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
                 Platform.runLater(() -> {
-                    if (responseCode == 200 || responseCode == 201) {
-                        statusLabel.setText("Dados enviados com sucesso!");
+                    if (response.statusCode() == 200 || response.statusCode() == 201) {
+                        statusLabel.setText("Estoque atualizado com sucesso!");
                         statusLabel.setStyle("-fx-text-fill: green;");
-                        loadStockForCompany(selectedCompany.getId());
-                    } else showError("Erro ao enviar: " + responseCode);
+                        loadStockForCompany(companyId);
+                    } else {
+                        showError("Erro ao atualizar: " + response.statusCode());
+                    }
                 });
 
+            } catch (NumberFormatException nfe) {
+                showError("Digite um número válido!");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 showError(ex.getMessage());
             }
+
+
+
         }).start();
     }
+
+
+
 
     private void showError(String message) {
         Platform.runLater(() -> {
@@ -363,7 +438,7 @@ public class BloodstockForm extends Application {
             } else if (progressValue < 0.3) {
                 progress.setStyle("-fx-accent: red;");
             } else {
-                progress.setStyle("-fx-accent: linear-gradient(to right, #76FF03, #00C853);");
+                progress.setStyle("-fx-accent: #76FF03;");
             }
 
             Label percentLabel = new Label(String.format("%.0f%%", Math.min(progressValue * 100, 100)));
@@ -383,8 +458,8 @@ public class BloodstockForm extends Application {
             });
 
             card.getChildren().addAll(typeLabel, quantityLabel, progressPane);
-            card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #e0f7fa; -fx-border-color: #00acc1; ..."));
-            card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #f9f9f9; -fx-border-color: #ccc; ..."));
+            card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #e0f7fa; -fx-border-color: #00acc1; -fx-border-radius: 5; -fx-background-radius: 5;"));
+            card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #f9f9f9; -fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-radius: 5;"));
 
             flowPane.getChildren().add(card);
         }

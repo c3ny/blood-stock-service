@@ -34,4 +34,9 @@ public class CompanyService {
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         return mapper.toDTO(company);
     }
+
+    public boolean existsById(UUID companyId) {
+        return listAll().stream().anyMatch(c -> c.getId().equals(companyId));
+    }
+
 }
