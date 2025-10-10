@@ -21,6 +21,19 @@ CREATE TABLE "user" (
     zipcode VARCHAR(10)
 );
 
+--Tabela de movimento
+CREATE TABLE bloodstock_movement (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bloodstock_id UUID NOT NULL REFERENCES stock(id),
+    movement INT NOT NULL,               -- positivo ou negativo
+    quantity_before INT NOT NULL,
+    quantity_after INT NOT NULL,
+    action_by VARCHAR(100) NOT NULL,     -- usuário que realizou a ação
+    action_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    notes TEXT                           -- opcional
+);
+
+
 -- Tabela company
 CREATE TABLE company (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
