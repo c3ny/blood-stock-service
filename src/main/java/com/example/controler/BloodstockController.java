@@ -1,7 +1,9 @@
 package com.example.controler;
 
 import com.example.model.Bloodstock;
+import com.example.model.BloodstockMovement;
 import com.example.model.CompanyDTO;
+import com.example.respository.BloodstockMovementRepository;
 import com.example.service.BloodstockService;
 import com.example.service.CompanyService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,10 +27,15 @@ public class BloodstockController {
     private static final Logger log = LogManager.getLogger(BloodstockController.class);
     private final BloodstockService bloodstockService;
     private final CompanyService companyService;
+    private final BloodstockMovementRepository historyRepository;
 
-    public BloodstockController(BloodstockService bloodstockService, CompanyService companyService) {
+    public BloodstockController(BloodstockService bloodstockService,
+                                CompanyService companyService,
+                                BloodstockMovementRepository historyRepository) {
         this.bloodstockService = bloodstockService;
         this.companyService = companyService;
+        this.historyRepository = historyRepository;
+
     }
 
     // Criar bloodstock vinculado a uma company
@@ -91,19 +98,28 @@ public class BloodstockController {
         }
     }
 
+    @GetMapping("/{bloodstockId}/history")
+    public List<BloodstockMovement> getHistory(@PathVariable UUID bloodstockId) {
+        return historyRepository.findAllByBloodstock_IdOrderByUpdateDateDesc(bloodstockId);
+    }
 
 
     @PostMapping("/company/{companyId}/movement")
     public ResponseEntity<Bloodstock> moveStock(
             @PathVariable UUID companyId,
             @RequestBody Map<String, Object> request) {
-
+        try {
         UUID bloodstockId = UUID.fromString((String) request.get("bloodstockId"));
         int quantity = (int) request.get("quantity");
         String currentUser = "admin";
 
         Bloodstock updated = bloodstockService.updateQuantity(bloodstockId, quantity, currentUser);
         return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body((Bloodstock) Map.of("error", e.getMessage()));
+        }
     }
 
 

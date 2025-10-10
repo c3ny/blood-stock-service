@@ -7,7 +7,9 @@ import com.example.model.BloodstockMovement;
 import com.example.respository.BloodstockMovementRepository;
 import com.example.respository.StockRepository;
 import com.example.respository.CompanyRepository;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,7 +21,6 @@ public class BloodstockService {
     private final StockRepository stockRepository;
     private final CompanyRepository companyRepository;
     private final BloodstockMovementRepository historyRepository;
-
 
     public BloodstockService(
             StockRepository stockRepository,
@@ -37,6 +38,7 @@ public class BloodstockService {
 
 
 
+    @Transactional
     public Bloodstock updateQuantity(UUID id, int movement, String currentUser) {
         // 1. Buscar o estoque
         Bloodstock stock = stockRepository.findById(id)

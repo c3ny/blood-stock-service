@@ -1,10 +1,13 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "bloodstock_movement")
 public class BloodstockMovement {
 
     @Id
@@ -20,9 +23,19 @@ public class BloodstockMovement {
     private int quantityAfter;
     private String actionBy;
     private LocalDateTime actionDate;
+    private String notes;
+
+
+    @Column(name = "update_date")
+    private LocalDateTime updateDate;
+    @PrePersist
+    @PreUpdate
+    private void onUpdate() {
+        this.updateDate = LocalDateTime.now();
+    }
 
     public BloodstockMovement() {
-        this.id = UUID.randomUUID(); // gera UUID automaticamente
+
     }
 
     // Getters e Setters
@@ -80,5 +93,13 @@ public class BloodstockMovement {
 
     public void setActionDate(LocalDateTime actionDate) {
         this.actionDate = actionDate;
+    }
+
+    public LocalDateTime getUpdateDate() {
+        return updateDate;
+    }
+
+    public void setUpdateDate(LocalDateTime updateDate) {
+        this.updateDate = updateDate;
     }
 }
