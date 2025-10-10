@@ -1,6 +1,6 @@
 package com.example.controler;
 
-import com.example.model.Company;
+import com.example.model.CompanyDTO;
 import com.example.service.CompanyService;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,12 +19,12 @@ public class CompanyController {
     }
 
     @GetMapping
-    public List<Company> listAll() {
+    public List<CompanyDTO> listAll() {
         return companyService.listAll();
     }
 
     @GetMapping("/{id}")
-    public Company getById(@PathVariable UUID id) {
+    public CompanyDTO getById(@PathVariable UUID id) {
         return companyService.findById(id);
 
     }

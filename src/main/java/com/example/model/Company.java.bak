@@ -8,10 +8,18 @@ import java.util.UUID;
 public class Company {
 
     @Id
-    @GeneratedValue
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
     private String institution_name;
+
+    // Método chamado antes de persistir o objeto
+    @PrePersist
+    public void generateId() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+    }
 
     // Getters e setters
     public UUID getId() {
@@ -30,3 +38,5 @@ public class Company {
         this.institution_name = institution_name;
     }
 }
+
+

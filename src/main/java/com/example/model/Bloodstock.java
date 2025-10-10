@@ -1,9 +1,10 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.example.entity.Company;
 
 @Entity
 @Table(name = "stock")
@@ -17,10 +18,21 @@ public class Bloodstock {
     @JsonProperty("blood_type")
     private String bloodType;
 
+    @Column(name = "update_date")
+    @JsonProperty("update_date")
+    private LocalDate updateDate;
+
+    @PrePersist
+    @PreUpdate
+    private void onUpdate() {
+        this.updateDate = LocalDate.now();
+    }
+
     private int quantity;
 
     @ManyToOne
     @JoinColumn(name = "fk_company_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;
 
     // Getters e Setters
@@ -35,4 +47,9 @@ public class Bloodstock {
 
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
+
+    public LocalDate getUpdateDate() { return updateDate; }
+    public void setUpdateDate(LocalDate date) { this.updateDate = date; }
+
+
 }

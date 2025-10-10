@@ -1,0 +1,22 @@
+package com.example.model;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.UUID;
+
+public class CompanyDTO {
+    private UUID id;
+    private String name;
+    private String institutionName;
+
+    // Getters e Setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getInstitutionName() { return institutionName; }
+    public void setInstitutionName(String institutionName) { this.institutionName = institutionName; }
+
+}
