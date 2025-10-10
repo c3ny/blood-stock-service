@@ -5,16 +5,19 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import java.io.InputStream;
+import javafx.util.StringConverter;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.HashMap;
@@ -26,20 +29,25 @@ public class BloodstockForm extends Application {
     private static final String COMPANY_URL = "http://localhost:8080/api/company";
 
     private ComboBox<Company> companyComboBox;
+    private ComboBox<String> bloodComboBox;
     private Label statusLabel;
 
     @Override
     public void start(Stage stage) {
 
-        // Campo para tipo sanguíneo
-        TextField bloodTypeField = new TextField();
-        bloodTypeField.setPromptText("Tipo sanguíneo (ex: O+)");
-
-        // Campo para quantidade
+        // Campo para quantidade (apenas números)
         TextField quantityField = new TextField();
         quantityField.setPromptText("Quantidade");
 
-        // ComboBox para selecionar company
+        // Permitir apenas números inteiros
+        quantityField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*(\\.\\d*)?")) {
+                quantityField.setText(oldValue);
+            }
+
+        });
+
+        // ComboBox de empresas
         companyComboBox = new ComboBox<>();
         companyComboBox.setPromptText("Selecione a company");
 
@@ -59,8 +67,21 @@ public class BloodstockForm extends Application {
 
             @Override
             public Company fromString(String string) {
-                // Não usado, mas precisa implementar
                 return null;
+            }
+        });
+
+        // ComboBox de tipos sanguíneos
+        bloodComboBox = new ComboBox<>();
+        bloodComboBox.setPromptText("Selecione o tipo sanguíneo");
+        bloodComboBox.setItems(FXCollections.observableArrayList(
+                "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"
+        ));
+
+        Label selectionLabel = new Label();
+        bloodComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                selectionLabel.setText("Você selecionou: " + newVal);
             }
         });
 
@@ -70,19 +91,19 @@ public class BloodstockForm extends Application {
 
         statusLabel = new Label();
 
-        submitButton.setOnAction(e -> sendBloodstock(bloodTypeField, quantityField));
+        submitButton.setOnAction(e -> sendBloodstock(quantityField));
 
         // Layout
-        VBox root = new VBox(15, companyComboBox, bloodTypeField, quantityField, submitButton, statusLabel);
+        VBox root = new VBox(15, companyComboBox, bloodComboBox, quantityField, submitButton, statusLabel, selectionLabel);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: white;");
 
-        Scene scene = new Scene(root, 350, 250);
+        Scene scene = new Scene(root, 350, 300);
         stage.setTitle("Cadastro de Estoque de Sangue");
         stage.setScene(scene);
         stage.show();
 
-        // Carregar companies do backend
+        // Carregar empresas
         loadCompanies();
     }
 
@@ -105,10 +126,8 @@ public class BloodstockForm extends Application {
                 Platform.runLater(() -> {
                     companyComboBox.getItems().clear();
                     companyComboBox.getItems().addAll(companies);
-                    if (!companies.equals(null)) {
-                        statusLabel.setText("Companies carregadas!");
-                        statusLabel.setStyle("-fx-text-fill: green;");
-                    }
+                    statusLabel.setText("Companies carregadas!");
+                    statusLabel.setStyle("-fx-text-fill: green;");
                 });
 
             } catch (Exception e) {
@@ -122,23 +141,29 @@ public class BloodstockForm extends Application {
         }).start();
     }
 
-
-    private void sendBloodstock(TextField bloodTypeField, TextField quantityField) {
+    private void sendBloodstock(TextField quantityField) {
         Company selectedCompany = companyComboBox.getSelectionModel().getSelectedItem();
+        String selectedBloodType = bloodComboBox.getSelectionModel().getSelectedItem();
+
         if (selectedCompany == null) {
             statusLabel.setText("Selecione uma company antes de enviar!");
             statusLabel.setStyle("-fx-text-fill: red;");
             return;
         }
 
+        if (selectedBloodType == null) {
+            statusLabel.setText("Selecione um tipo sanguíneo!");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
         new Thread(() -> {
             try {
-                String bloodType = bloodTypeField.getText();
                 int quantity = Integer.parseInt(quantityField.getText());
                 UUID companyId = selectedCompany.getId();
 
                 Map<String, Object> data = new HashMap<>();
-                data.put("blood_type", bloodType);
+                data.put("blood_type", selectedBloodType);
                 data.put("quantity", quantity);
 
                 ObjectMapper mapper = new ObjectMapper();
