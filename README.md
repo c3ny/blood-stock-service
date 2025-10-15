@@ -210,7 +210,7 @@ Antes de começar, você precisará ter instalado:
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/blood-stock-service.git
+git clone https://github.com/FireC4io/blood-stock-service.git
 cd blood-stock-service
 ```
 
@@ -552,7 +552,7 @@ Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) par
 
 ## 👥 Autores
 
-- Caio Cesar Martins de Lima - *Desenvolvimento inicial* - [@firec4io](https://github.com/firec4io)
+- Caio Cesar Martins de Lima - *Desenvolvimento inicial* - [@FireC4io](https://github.com/firec4io)
 
 ---
 
@@ -571,8 +571,8 @@ Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) par
 Se você tiver alguma dúvida ou problema:
 
 - 📧 Email: euacaio14@gmail.com
-- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/blood-stock-service/issues)
-- 💬 Discussões: [GitHub Discussions](https://github.com/seu-usuario/blood-stock-service/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/FireC4io/blood-stock-service/issues)
+- 💬 Discussões: [GitHub Discussions](https://github.com/FireC4io/blood-stock-service/discussions)
 
 ---
 
