@@ -23,15 +23,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 📦 Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: 🔧 Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -48,16 +41,17 @@ jobs:
           CI: true
 
       - name: 📈 Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: build/reports/jacoco/test/jacocoTestReport.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: 📄 Upload quality reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: quality-reports
           path: |

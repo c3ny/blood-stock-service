@@ -37,22 +37,10 @@ jobs:
           java-version: '17'
 
       - name: 🐘 Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: wrapper
+        uses: gradle/actions/setup-gradle@v3
 
       - name: 🔍 Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
-
-      - name: 📦 Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+        uses: gradle/actions/wrapper-validation@v3
 
       - name: 🔧 Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -86,14 +74,14 @@ jobs:
 
       - name: 📈 Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: build/test-results/test/
 
       - name: 📦 Upload build artifacts
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: build/libs/*.jar
