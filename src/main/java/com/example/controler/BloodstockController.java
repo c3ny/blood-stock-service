@@ -12,6 +12,20 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.model.BloodstockMovementRequestDTO;
+import jakarta.validation.Valid;
+import com.example.model.Bloodstock;
+import com.example.service.BloodstockService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,6 +37,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/stock")
 @CrossOrigin(origins = "*")
+@Tag(name = "Estoque de Sangue", description = "Operações relacionadas ao gerenciamento de estoque de sangue")
 public class BloodstockController {
 
     private static final Logger log = LogManager.getLogger(BloodstockController.class);
@@ -105,17 +120,18 @@ public class BloodstockController {
     @PostMapping("/company/{companyId}/movement")
     public ResponseEntity<Bloodstock> moveStock(
             @PathVariable UUID companyId,
-            @RequestBody Map<String, Object> request
+            @Valid @RequestBody BloodstockMovementRequestDTO requestDTO // Usar o DTO e @Valid
     ) {
         try {
-            UUID bloodstockId = UUID.fromString((String) request.get("bloodstockId"));
-            int quantity = (int) request.get("quantity");
-            String currentUser = "admin";
+            // Os dados já vêm tipados e validados pelo DTO
+            UUID bloodstockId = requestDTO.getBloodstockId();
+            int quantity = requestDTO.getQuantity();
+            String currentUser = "admin"; // Considerar implementar autenticação real (Sugestão 1)
 
             Bloodstock updated = bloodstockService.updateQuantity(bloodstockId, quantity, currentUser);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Erro ao mover estoque para a empresa {}: {}", companyId, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

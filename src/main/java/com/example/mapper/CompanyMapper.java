@@ -3,6 +3,7 @@ package com.example.mapper;
 import com.example.entity.Company;
 import com.example.model.CompanyDTO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 @Mapper
@@ -12,5 +13,8 @@ public interface CompanyMapper {
 
     CompanyDTO toDTO(Company company);
 
+    @Mapping(target = "cnpj", ignore = true)
+    @Mapping(target = "cnes", ignore = true)
+    @Mapping(target = "fkUserId", ignore = true)
     Company toEntity(CompanyDTO dto);
 }

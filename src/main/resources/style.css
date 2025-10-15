@@ -1,0 +1,28 @@
+/* src/main/resources/style.css */
+.root {
+    -fx-background-color: #f4f4f4;
+}
+
+.button {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 15px;
+    -fx-border-radius: 5px;
+}
+
+.button:hover {
+    -fx-background-color: #0056b3;
+}
+
+.label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333;
+}
+
+.text-field, .text-area {
+    -fx-border-color: #ccc;
+    -fx-border-radius: 3px;
+    -fx-padding: 5px;
+}
