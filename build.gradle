@@ -4,6 +4,10 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.14'
+    id 'checkstyle'
+    id 'com.github.spotbugs' version '6.0.0'
+    id 'jacoco'
+    id 'org.owasp.dependencycheck' version '8.4.0'
 }
 
 group = 'com.example'
@@ -15,13 +19,28 @@ java {
     }
 }
 
+jacoco {
+    toolVersion = "0.8.10"
+}
+
 repositories {
     mavenCentral()
+}
+
+checkstyle {
+    toolVersion = '10.12.0'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
 }
 
 javafx {
     version = "17.0.12"
     modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+spotbugs {
+    toolVersion = '4.7.3'
+    effort = 'max'
+    reportLevel = 'medium'
 }
 
 dependencies {
@@ -50,6 +69,17 @@ dependencies {
 tasks.named('test') {
     enabled = false
     useJUnitPlatform()
+}
+
+test {
+    useJUnitPlatform()
+
+    // Excluir testes de interface gráfica no CI
+    if (System.getenv("CI") == "true") {
+        exclude '**/view/**'
+    }
+
+    finalizedBy jacocoTestReport
 }
 
 // ==================
