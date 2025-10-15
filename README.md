@@ -4,7 +4,7 @@ Sistema completo de gerenciamento de estoque de sangue desenvolvido com **Spring
 
 ---
 
-## 📋 Índice
+## 📋 Índice 
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Funcionalidades](#funcionalidades)
