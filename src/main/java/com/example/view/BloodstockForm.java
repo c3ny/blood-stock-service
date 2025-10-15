@@ -1,6 +1,7 @@
 package com.example.view;
 
 import com.example.model.Bloodstock;
+import com.example.model.BloodstockMovement;
 import com.example.model.CompanyDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -17,6 +18,8 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Ellipse;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -28,6 +31,7 @@ import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Table;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -35,16 +39,19 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class BloodstockForm extends Application {
 
-    private static final String BASE_URL = "http://localhost:8080/api/stock";
-    private static final String COMPANY_URL = "http://localhost:8080/api/company";
+    private static final String BASE_URL = "http://localhost:8081/api/stock";
+    private static final String COMPANY_URL = "http://localhost:8081/api/company";
 
     private VBox dashboardContainer; // variável de instância correta
     private ComboBox<CompanyDTO> companyComboBox;
@@ -55,7 +62,7 @@ public class BloodstockForm extends Application {
     private Label selectionLabel;
     private TableView<Bloodstock> tableView;
     private String selectedMovementType = null;
-
+    private Button historyReportButton;
 
     @Override
     public void start(Stage stage) {
@@ -68,26 +75,27 @@ public class BloodstockForm extends Application {
         tableView = new TableView<>();
         dashboardContainer = new VBox();
 
+        String buttonStyle = "-fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 13px; "
+                + "-fx-text-fill: white; -fx-pref-width: 150; -fx-pref-height: 35;";
+
+        // ===================== 🩸 Seção de Movimentação =====================
         Label movementLabel = new Label("Selecione o tipo de movimentação:");
         Button entradaButton = new Button("Entrada");
         Button saidaButton = new Button("Saída");
 
-        entradaButton.setStyle("-fx-background-color: #43a047; -fx-text-fill: white; -fx-font-weight: bold;");
-        saidaButton.setStyle("-fx-background-color: #e53935; -fx-text-fill: white; -fx-font-weight: bold;");
+        entradaButton.setStyle(buttonStyle + "-fx-background-color: #43a047;");
+        saidaButton.setStyle(buttonStyle + "-fx-background-color: #e53935;");
 
         HBox movementButtons = new HBox(10, entradaButton, saidaButton);
         movementButtons.setAlignment(Pos.CENTER);
 
-    // Campo de quantidade inicialmente invisível
         quantityField.setVisible(false);
 
-    // Label para indicar o tipo selecionado
         Label selectedMovementLabel = new Label();
         selectedMovementLabel.setStyle("-fx-font-weight: bold;");
 
-    // Ação dos botões
         entradaButton.setOnAction(e -> {
-                selectedMovementType = "Entrada";
+            selectedMovementType = "Entrada";
             selectedMovementLabel.setText("Movimentação: Entrada");
             quantityField.setVisible(true);
         });
@@ -104,24 +112,205 @@ public class BloodstockForm extends Application {
         setupBloodComboBox();
         setupSubmitButton();
         setupTableView();
+        // Criar botão de relatório do estoque
+        Button stockReportButton = new Button("Gerar Relatório do Estoque");
+        stockReportButton.setStyle("-fx-background-color: #00796b; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        // Botão de relatório
-        Button reportButton = new Button("Gerar Relatório");
-        reportButton.setStyle("-fx-background-color: #1976d2; -fx-text-fill: white; -fx-font-weight: bold;");
-        reportButton.setOnAction(e -> {
-            showPreview(buildReportContent());
+        // Ação do botão: gerar o relatório atual de estoque
+        stockReportButton.setOnAction(e -> {
+            CompanyDTO selectedCompany = companyComboBox.getValue();
+            if (selectedCompany == null) {
+                showAlert("Selecione uma empresa antes de gerar o relatório!");
+                return;
+            }
+
+            String reportContent = buildReportContent();
+            showPreview(reportContent);
         });
 
-        VBox root = new VBox(15, dashboardContainer,movementLabel, movementButtons, selectedMovementLabel, reportButton, companyComboBox, bloodComboBox, quantityField, submitButton, statusLabel, selectionLabel, tableView);
+
+        // Criar botão de relatório do histórico
+        historyReportButton = new Button("Gerar Relatório do Histórico");
+        historyReportButton.setStyle("-fx-background-color: #0288d1; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        historyReportButton.setOnAction(e -> {
+            CompanyDTO selectedCompany = companyComboBox.getValue();
+            if (selectedCompany == null) {
+                showAlert("Selecione uma empresa antes de gerar o relatório!");
+                return;
+            }
+
+            String apiUrl = BASE_URL + "/history/report/" + selectedCompany.getId();
+
+            new Thread(() -> {
+                try {
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(apiUrl))
+                            .GET()
+                            .header("Accept", "application/json")
+                            .build();
+
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                    if (response.statusCode() == 200) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        mapper.registerModule(new JavaTimeModule());
+
+                        BloodstockMovement[] historyList = mapper.readValue(response.body(), BloodstockMovement[].class);
+
+                        Platform.runLater(() -> showHistoryPreview(List.of(historyList)));
+                    } else {
+                        Platform.runLater(() ->
+                                showAlert("Erro ao gerar relatório: HTTP " + response.statusCode()));
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    Platform.runLater(() -> showAlert("Erro: " + ex.getMessage()));
+                }
+            }).start();
+        });
+
+
+
+        VBox root = new VBox(15,
+                dashboardContainer,
+                historyReportButton,
+                stockReportButton ,
+                movementLabel,
+                movementButtons,
+                selectedMovementLabel,
+                companyComboBox,
+                bloodComboBox,
+                quantityField,
+                submitButton,
+                statusLabel,
+                selectionLabel,
+                tableView);
+
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: white;");
+        root.setAlignment(Pos.TOP_CENTER);
 
-        Scene scene = new Scene(root, 600, 600);
-        stage.setTitle("Cadastro de Estoque de Sangue");
+        // === 🖱️ Adiciona barra de rolagem vertical ===
+        ScrollPane scrollPane = new ScrollPane(root);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); // sem rolagem horizontal
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // mostra a vertical quando necessário
+        scrollPane.setStyle("-fx-background-color: white; -fx-border-color: transparent;");
+
+
+        Scene scene = new Scene(scrollPane, 430, 700);
+        stage.setTitle("Controle de Estoque de Sangue");
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
 
         loadCompanies();
+    }
+    private void showHistoryPreview(List<BloodstockMovement> historyList) {
+        Stage previewStage = new Stage();
+        previewStage.setTitle("Pré-visualização do Histórico de Movimentações");
+
+        TableView<BloodstockMovement> historyTable = new TableView<>();
+        historyTable.setItems(FXCollections.observableArrayList(historyList));
+
+        TableColumn<BloodstockMovement, String> typeCol = new TableColumn<>("Tipo Sanguíneo");
+        typeCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
+                c.getValue().getBloodstock() != null ? c.getValue().getBloodstock().getBloodType() : "-"
+        ));
+
+        TableColumn<BloodstockMovement, Integer> movementCol = new TableColumn<>("Movimentação");
+        movementCol.setCellValueFactory(new PropertyValueFactory<>("movement"));
+
+        TableColumn<BloodstockMovement, Integer> beforeCol = new TableColumn<>("Antes");
+        beforeCol.setCellValueFactory(new PropertyValueFactory<>("quantityBefore"));
+
+        TableColumn<BloodstockMovement, Integer> afterCol = new TableColumn<>("Depois");
+        afterCol.setCellValueFactory(new PropertyValueFactory<>("quantityAfter"));
+
+        TableColumn<BloodstockMovement, String> userCol = new TableColumn<>("Usuário");
+        userCol.setCellValueFactory(new PropertyValueFactory<>("actionBy"));
+
+        TableColumn<BloodstockMovement, LocalDateTime> dateCol = new TableColumn<>("Data");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("actionDate"));
+
+        historyTable.getColumns().setAll(typeCol, movementCol, beforeCol, afterCol, userCol, dateCol);
+        historyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        historyTable.setPrefHeight(300);
+
+        Button printButton = new Button("Imprimir");
+        Button pdfButton = new Button("Gerar PDF");
+
+        printButton.setOnAction(e -> printHistoryTable(historyTable));
+        pdfButton.setOnAction(e -> generateHistoryPdf(historyTable));
+
+        HBox buttons = new HBox(10, printButton, pdfButton);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(10, historyTable, buttons);
+        root.setPadding(new Insets(10));
+
+        Scene scene = new Scene(root, 700, 400);
+        previewStage.setScene(scene);
+        previewStage.show();
+    }
+    private void printHistoryTable(TableView<BloodstockMovement> table) {
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job != null && job.showPrintDialog(null)) {
+            boolean success = job.printPage(table);
+            if (success) job.endJob();
+        }
+    }
+    private void generateHistoryPdf(TableView<BloodstockMovement> table) {
+        try {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Escolha o diretório para salvar o PDF");
+            File selectedDir = directoryChooser.showDialog(table.getScene().getWindow());
+
+            if (selectedDir == null) return;
+
+            String filePath = selectedDir.getAbsolutePath() + File.separator + "historico_movimentacoes.pdf";
+            PdfWriter writer = new PdfWriter(filePath);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+
+            document.add(new Paragraph("Histórico de Movimentações de Sangue").setBold().setFontSize(16));
+            CompanyDTO company = companyComboBox.getSelectionModel().getSelectedItem();
+            document.add(new Paragraph("Empresa: " + (company != null ? company.getInstitutionName() : "")));
+            document.add(new Paragraph("Data: " + LocalDate.now()));
+            document.add(new Paragraph(" "));
+
+            float[] columnWidths = {3, 2, 2, 2, 3, 3};
+            Table pdfTable = new Table(columnWidths);
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Tipo")));
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Movimentação")));
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Antes")));
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Depois")));
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Usuário")));
+            pdfTable.addHeaderCell(new Cell().add(new Paragraph("Data")));
+
+            for (BloodstockMovement m : table.getItems()) {
+                pdfTable.addCell(new Cell().add(new Paragraph(
+                        m.getBloodstock() != null ? m.getBloodstock().getBloodType() : "-")));
+                pdfTable.addCell(new Cell().add(new Paragraph(String.valueOf(m.getMovement()))));
+                pdfTable.addCell(new Cell().add(new Paragraph(String.valueOf(m.getQuantityBefore()))));
+                pdfTable.addCell(new Cell().add(new Paragraph(String.valueOf(m.getQuantityAfter()))));
+                pdfTable.addCell(new Cell().add(new Paragraph(m.getActionBy())));
+                pdfTable.addCell(new Cell().add(new Paragraph(
+                        m.getActionDate() != null ? m.getActionDate().toString() : "")));
+            }
+
+            document.add(pdfTable);
+            document.close();
+
+            Platform.runLater(() ->
+                    showAlert("PDF gerado com sucesso em:\n" + filePath));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Platform.runLater(() -> showAlert("Erro ao gerar PDF: " + ex.getMessage()));
+        }
     }
 
 
@@ -134,18 +323,14 @@ public class BloodstockForm extends Application {
                 setText(empty || item == null ? null : item.getInstitutionName());
             }
         });
-
         companyComboBox.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(CompanyDTO company) {
+            @Override public String toString(CompanyDTO company) {
                 return company == null ? null : company.getInstitutionName();
             }
-            @Override
-            public CompanyDTO fromString(String string) { return null; }
+            @Override public CompanyDTO fromString(String string) { return null; }
         });
-
-        companyComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) loadStockForCompany(newVal.getId());
+        companyComboBox.getSelectionModel().selectedItemProperty().addListener((obs, o, n) -> {
+            if (n != null) loadStockForCompany(n.getId());
             else tableView.getItems().clear();
         });
     }
@@ -206,6 +391,17 @@ public class BloodstockForm extends Application {
             }
         }).start();
     }
+
+
+
+    private void showAlert(String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Relatório");
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
+    }
+
 
     private void sendBloodstock() {
         CompanyDTO selectedCompany = companyComboBox.getSelectionModel().getSelectedItem();
@@ -408,64 +604,55 @@ public class BloodstockForm extends Application {
         }
     }
 
+    private Color getEllipseColorByQuantity(int quantity) {
+        if (quantity < 30) {       // estoque baixo
+            return Color.RED;
+        } else if (quantity < 70) { // estoque médio
+            return Color.ORANGE;
+        } else {                    // estoque alto
+            return Color.GREEN;
+        }
+    }
+
+
     private void showBloodstockDashboard(List<Bloodstock> bloodstockList, VBox overviewContainer, TableView<Bloodstock> tableView) {
         overviewContainer.getChildren().clear();
+
+        // 🔢 Ordenar por tipo sanguíneo na ordem lógica
+        List<String> order = List.of("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-");
+        List<Bloodstock> sortedList = bloodstockList.stream()
+                .sorted(Comparator.comparingInt(b -> order.indexOf(b.getBloodType())))
+                .collect(Collectors.toList());
+
         FlowPane flowPane = new FlowPane();
         flowPane.setHgap(15);
         flowPane.setVgap(15);
-        flowPane.setPrefWrapLength(550);
+        flowPane.setAlignment(Pos.CENTER);
+        flowPane.setPrefWrapLength(400);
 
-        for (Bloodstock b : bloodstockList) {
-            VBox card = new VBox(8);
-            card.setPadding(new Insets(10));
-            card.setStyle("-fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-radius: 5; -fx-background-color: #f9f9f9;");
-            card.setPrefWidth(140);
+        for (Bloodstock b : sortedList) {
+            VBox card = new VBox(5);
+            card.setPrefSize(75, 85);
             card.setAlignment(Pos.CENTER);
+            card.setStyle("-fx-background-color: #ffffff; -fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-radius: 5;");
+            card.setPadding(new Insets(5));
 
             Label typeLabel = new Label(b.getBloodType());
-            typeLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+            typeLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
-            Label quantityLabel = new Label(b.getQuantity() + " unidades");
+            Label quantityLabel = new Label(String.valueOf(b.getQuantity()));
+            quantityLabel.setStyle("-fx-font-size: 18px;");
 
-            StackPane progressPane = new StackPane();
-            ProgressBar progress = new ProgressBar();
-            progress.setPrefWidth(120);
-            double progressValue = b.getQuantity() / 100.0;
-            progress.setProgress(Math.min(progressValue, 1));
+            Ellipse ellipse = new Ellipse(10, 10);
+            ellipse.setFill(getEllipseColorByQuantity(b.getQuantity()));
 
-            if (progressValue > 1) {
-                progress.setStyle("-fx-accent: orange;");
-            } else if (progressValue < 0.3) {
-                progress.setStyle("-fx-accent: red;");
-            } else {
-                progress.setStyle("-fx-accent: #76FF03;");
-            }
-
-            Label percentLabel = new Label(String.format("%.0f%%", Math.min(progressValue * 100, 100)));
-            percentLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
-            progressPane.getChildren().addAll(progress, percentLabel);
-
-            Tooltip tooltip = new Tooltip(
-                    "Última atualização: " + (b.getUpdateDate() != null ? b.getUpdateDate() : "N/A") +
-                            "\nEmpresa: " + (companyComboBox.getSelectionModel().getSelectedItem() != null ?
-                            companyComboBox.getSelectionModel().getSelectedItem().getInstitutionName() : "N/A")
-            );
-            Tooltip.install(card, tooltip);
-
-            card.setOnMouseClicked(event -> {
-                tableView.getSelectionModel().select(b);
-                tableView.scrollTo(b);
-            });
-
-            card.getChildren().addAll(typeLabel, quantityLabel, progressPane);
-            card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #e0f7fa; -fx-border-color: #00acc1; -fx-border-radius: 5; -fx-background-radius: 5;"));
-            card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #f9f9f9; -fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-radius: 5;"));
-
+            card.getChildren().addAll(typeLabel, quantityLabel, ellipse);
             flowPane.getChildren().add(card);
         }
 
         overviewContainer.getChildren().add(flowPane);
     }
+
 
     private void loadCompanies() { new Thread(() -> { try { URL url = new URL(COMPANY_URL); HttpURLConnection conn = (HttpURLConnection) url.openConnection(); conn.setRequestMethod("GET"); conn.setRequestProperty("Accept", "application/json"); if (conn.getResponseCode() != 200) throw new RuntimeException("HTTP error: " + conn.getResponseCode()); ObjectMapper mapper = new ObjectMapper(); mapper.registerModule(new JavaTimeModule()); CompanyDTO[] companies = mapper.readValue(conn.getInputStream(), CompanyDTO[].class); Platform.runLater(() -> { companyComboBox.getItems().setAll(companies); if (!companyComboBox.getItems().isEmpty()) companyComboBox.getSelectionModel().selectFirst(); }); } catch (Exception e) { e.printStackTrace(); Platform.runLater(() -> companyComboBox.getItems().clear()); } }).start(); }
 

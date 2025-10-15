@@ -12,5 +12,6 @@ import java.util.UUID;
 @Repository
 public interface BloodstockMovementRepository extends JpaRepository<BloodstockMovement, UUID> {
     List<BloodstockMovement> findAllByBloodstock_IdOrderByUpdateDateDesc(UUID bloodstockId);
+    List<BloodstockMovement> findByBloodstock_Company_IdOrderByActionDateDesc(UUID companyId);
 }
 

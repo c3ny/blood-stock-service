@@ -9,12 +9,13 @@ import com.example.service.CompanyService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,13 +30,14 @@ public class BloodstockController {
     private final CompanyService companyService;
     private final BloodstockMovementRepository historyRepository;
 
-    public BloodstockController(BloodstockService bloodstockService,
-                                CompanyService companyService,
-                                BloodstockMovementRepository historyRepository) {
+    public BloodstockController(
+            BloodstockService bloodstockService,
+            CompanyService companyService,
+            BloodstockMovementRepository historyRepository
+    ) {
         this.bloodstockService = bloodstockService;
         this.companyService = companyService;
         this.historyRepository = historyRepository;
-
     }
 
     // Criar bloodstock vinculado a uma company
@@ -67,64 +69,58 @@ public class BloodstockController {
     @GetMapping("/company")
     public List<CompanyDTO> listCompanies() {
         return companyService.listAll();
-
     }
 
-    //Listar estoque da empresa
+    // Listar estoque da empresa
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<Bloodstock>> getStockByCompany(@PathVariable String companyId) {
         try {
-            // Validar se o companyId é um UUID válido
             UUID uuid;
             try {
                 uuid = UUID.fromString(companyId);
             } catch (IllegalArgumentException ex) {
-                return ResponseEntity.badRequest()
-                        .body(List.of()); // Retorna 400 se o UUID for inválido
+                return ResponseEntity.badRequest().body(List.of());
             }
 
-            // Checar se a empresa existe
             if (!companyService.existsById(uuid)) {
-                return ResponseEntity.notFound().build(); // 404 se a empresa não existe
+                return ResponseEntity.notFound().build();
             }
 
-            // Buscar estoque
             List<Bloodstock> stockList = bloodstockService.findByCompany(uuid);
             return ResponseEntity.ok(stockList);
 
         } catch (Exception e) {
-            e.printStackTrace(); // Log do erro
-            return ResponseEntity.status(500).body(List.of()); // 500 em caso de falha no servidor
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(List.of());
         }
     }
 
+    // Histórico por Bloodstock
     @GetMapping("/{bloodstockId}/history")
     public List<BloodstockMovement> getHistory(@PathVariable UUID bloodstockId) {
         return historyRepository.findAllByBloodstock_IdOrderByUpdateDateDesc(bloodstockId);
     }
 
-
+    // Atualizar estoque via movimento
     @PostMapping("/company/{companyId}/movement")
     public ResponseEntity<Bloodstock> moveStock(
             @PathVariable UUID companyId,
-            @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request
+    ) {
         try {
-        UUID bloodstockId = UUID.fromString((String) request.get("bloodstockId"));
-        int quantity = (int) request.get("quantity");
-        String currentUser = "admin";
+            UUID bloodstockId = UUID.fromString((String) request.get("bloodstockId"));
+            int quantity = (int) request.get("quantity");
+            String currentUser = "admin";
 
-        Bloodstock updated = bloodstockService.updateQuantity(bloodstockId, quantity, currentUser);
-        return ResponseEntity.ok(updated);
+            Bloodstock updated = bloodstockService.updateQuantity(bloodstockId, quantity, currentUser);
+            return ResponseEntity.ok(updated);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body((Bloodstock) Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-
-
-    // Gerar relatório CSV filtrando por company
+    // Gerar relatório CSV do estoque
     @GetMapping("/report/{companyId}")
     public void generateReport(@PathVariable UUID companyId, HttpServletResponse response) throws IOException {
         List<Bloodstock> stockList = bloodstockService.findByCompany(companyId);
@@ -136,10 +132,24 @@ public class BloodstockController {
         writer.println("Blood Type,Quantity,Date");
 
         for (Bloodstock b : stockList) {
-            writer.println(b.getUpdateDate() + "," + b.getQuantity());
+            writer.println(b.getBloodType() + "," + b.getQuantity() + "," + b.getUpdateDate());
         }
 
         writer.flush();
         writer.close();
+    }
+
+    // ✅ Novo endpoint correto para relatório do histórico por empresa
+    @GetMapping("/history/report/{companyId}")
+    public ResponseEntity<List<BloodstockMovement>> getHistoryReportByCompany(@PathVariable UUID companyId) {
+        try {
+            List<BloodstockMovement> history =
+                    historyRepository.findByBloodstock_Company_IdOrderByActionDateDesc(companyId);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
     }
 }

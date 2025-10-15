@@ -36,6 +36,10 @@ public class BloodstockService {
         return stockRepository.findAll();
     }
 
+    public List<BloodstockMovement> findByCompanyId(UUID companyId) {
+        return historyRepository.findByBloodstock_Company_IdOrderByActionDateDesc(companyId);
+    }
+
 
 
     @Transactional
