@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %X{requestId} - %msg%n"/>
+        </Console>
+
+        <!-- Appender para logs em JSON, ideal para centralização -->
+        <Console name="JsonConsole" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:Log4j2EventLayout.json" compact="true" eventEol="true"/>
+        </Console>
+
+        <!-- Exemplo de File Appender -->
+        <File name="File" fileName="logs/bloodstock-service.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %X{requestId} - %msg%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <!-- Para enviar logs JSON para um sistema de centralização, você pode mudar o ref aqui -->
+            <!-- <AppenderRef ref="JsonConsole"/> -->
+            <AppenderRef ref="File"/>
+        </Root>
+        <Logger name="com.example" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Logger>
+    </Loggers>
+</Configuration>
