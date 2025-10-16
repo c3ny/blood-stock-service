@@ -2,9 +2,11 @@ package com.example.service;
 
 import com.example.entity.Company;
 import com.example.model.CompanyDTO;
-import com.example.respository.CompanyRepository;
+import com.example.model.Bloodstock;
 import com.example.mapper.CompanyMapper;
+import com.example.respository.CompanyRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,13 +16,15 @@ import java.util.stream.Collectors;
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final BloodstockService bloodstockService; // relação com a outra service
     private final CompanyMapper mapper = CompanyMapper.INSTANCE;
 
-    public CompanyService(CompanyRepository companyRepository) {
+    public CompanyService(CompanyRepository companyRepository, BloodstockService bloodstockService) {
         this.companyRepository = companyRepository;
+        this.bloodstockService = bloodstockService;
     }
 
-    // Lista todas as empresas como DTO
+    @Transactional(readOnly = true)
     public List<CompanyDTO> listAll() {
         return companyRepository.findAll()
                 .stream()
@@ -28,7 +32,7 @@ public class CompanyService {
                 .collect(Collectors.toList());
     }
 
-    // Busca empresa por id como DTO
+    @Transactional(readOnly = true)
     public CompanyDTO findById(UUID id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
@@ -36,7 +40,22 @@ public class CompanyService {
     }
 
     public boolean existsById(UUID companyId) {
-        return listAll().stream().anyMatch(c -> c.getId().equals(companyId));
+        return companyRepository.existsById(companyId);
     }
 
+    @Transactional
+    public Company createCompanyWithBloodstock(Company company, Bloodstock stock) {
+        // Salva a empresa
+        Company savedCompany = companyRepository.save(company);
+
+        // Associa o Bloodstock à empresa (mesma transação)
+        bloodstockService.save(stock, savedCompany.getId());
+
+        return savedCompany;
+    }
+
+    @Transactional
+    public Company createCompany(Company company) {
+        return companyRepository.save(company);
+    }
 }
