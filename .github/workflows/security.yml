@@ -82,10 +82,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🔐 TruffleHog Secret Scan
+      # Scan incremental em push / pull_request — usa commits reais
+      - name: 🔐 TruffleHog Secret Scan (incremental)
+        if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.event.before != github.sha }}
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
+
+      # Scan completo em schedule (executa full repo scan)
+      - name: 🔐 TruffleHog Secret Scan (full - schedule)
+        if: ${{ github.event_name == 'schedule' }}
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./   # sem base/head => varre histórico completo
 
