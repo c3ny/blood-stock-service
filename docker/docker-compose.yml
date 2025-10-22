@@ -1,21 +1,17 @@
-spring.application.name=blood-stock-service
-  
-  # Configuração do banco de dados usando variáveis de ambiente
-spring.datasource.url=jdbc:postgresql://localhost:5432/SangueSolidario
-spring.datasource.username=sa
-spring.datasource.password=1
-server.port=8081
+services:
+  postgres:
+    image: postgres:15
+    container_name: bloodstock-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sangue_solidario
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
 
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
-logging.level.root=INFO
-logging.level.com.example=DEBUG # Para ver logs mais detalhados da sua aplicação
-logging.level.org.springframework=INFO
-logging.level.org.hibernate=INFO
-  
-  # Para usar log4j2 explicitamente
-logging.config=classpath:log4j2.xml
+volumes:
+  db-data:
