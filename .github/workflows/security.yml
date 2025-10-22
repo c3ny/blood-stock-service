@@ -82,7 +82,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Scan incremental em push / pull_request — usa commits reais
+      - name: 🔍 Debug GitHub event info (debug)
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "before=${{ github.event.before }}"
+          echo "sha=${{ github.sha }}"
+
+      # Incremental scan for push / pull_request events
       - name: 🔐 TruffleHog Secret Scan (incremental)
         if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.event.before != github.sha }}
         uses: trufflesecurity/trufflehog@main
@@ -91,10 +97,10 @@ jobs:
           base: ${{ github.event.before }}
           head: ${{ github.sha }}
 
-      # Scan completo em schedule (executa full repo scan)
+      # Full repository scan for scheduled runs
       - name: 🔐 TruffleHog Secret Scan (full - schedule)
         if: ${{ github.event_name == 'schedule' }}
         uses: trufflesecurity/trufflehog@main
         with:
-          path: ./   # sem base/head => varre histórico completo
+          path: ./
 
