@@ -1,14 +1,7 @@
 -- Habilitar extensão para gerar UUID
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Tabela stock (exemplo anterior)
-CREATE TABLE stock (
-    id SERIAL PRIMARY KEY,
-    product_name VARCHAR(100) NOT NULL,
-    quantity INT NOT NULL
-);
-
--- Tabela user
+-- 1️⃣ Tabela de usuários
 CREATE TABLE "user" (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
@@ -21,20 +14,7 @@ CREATE TABLE "user" (
     zipcode VARCHAR(10)
 );
 
---Tabela de movimento
-CREATE TABLE bloodstock_movement (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bloodstock_id UUID NOT NULL REFERENCES stock(id),
-    movement INT NOT NULL,               -- positivo ou negativo
-    quantity_before INT NOT NULL,
-    quantity_after INT NOT NULL,
-    action_by VARCHAR(100) NOT NULL,     -- usuário que realizou a ação
-    action_date TIMESTAMP NOT NULL DEFAULT NOW(),
-    notes TEXT                           -- opcional
-);
-
-
--- Tabela company
+-- 2️⃣ Tabela de empresas (depende de "user")
 CREATE TABLE company (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     cnpj VARCHAR(18) NOT NULL UNIQUE,
@@ -42,4 +22,26 @@ CREATE TABLE company (
     cnes VARCHAR(15) NOT NULL,
     fk_user_id UUID NOT NULL UNIQUE,
     FOREIGN KEY (fk_user_id) REFERENCES "user"(id) ON DELETE CASCADE
+);
+
+-- 3️⃣ Tabela de estoque de sangue (depende de company)
+CREATE TABLE stock (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    blood_type VARCHAR(10) NOT NULL,
+    quantity INT NOT NULL,
+    update_date DATE DEFAULT NOW(),
+    company_id UUID NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+-- 4️⃣ Tabela de movimentação de estoque (depende de stock)
+CREATE TABLE bloodstock_movement (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bloodstock_id UUID NOT NULL REFERENCES stock(id),
+    movement INT NOT NULL,
+    quantity_before INT NOT NULL,
+    quantity_after INT NOT NULL,
+    action_by VARCHAR(100) NOT NULL,
+    action_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    notes TEXT
 );

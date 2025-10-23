@@ -18,7 +18,7 @@ public class Company {
     private String cnpj;
     private String cnes;
 
-    @Column(name = "institution_name")
+    @Column(name = "institution_name", nullable = false)
     private String institutionName;
 
     @Column(name = "fk_user_id")

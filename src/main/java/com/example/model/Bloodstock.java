@@ -40,7 +40,7 @@ public class Bloodstock {
     private int quantity;
 
     @ManyToOne
-    @JoinColumn(name = "fk_company_id", nullable = false)
+    @JoinColumn(name = "company_id", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;
 
