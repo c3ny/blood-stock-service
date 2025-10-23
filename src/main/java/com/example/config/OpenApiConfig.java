@@ -1,6 +1,6 @@
-// src/main/java/com/example/config/OpenApiConfig.java
 package com.example.config;
 
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -11,13 +11,16 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI customOpenAPI() {
+    public OpenAPI sangueSolidarioOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Blood Stock Service API")
-                        .version("1.0")
-                        .description("API para gerenciamento de estoque de sangue e informações de empresas.")
-                        .termsOfService("http://swagger.io/terms/")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                        .title("Sangue Solidário API")
+                        .description("API REST para gerenciamento de estoque de sangue — Projeto Blood Stock Service")
+                        .version("1.0.0")
+                        .license(new License().name("MIT License").url("https://opensource.org/licenses/MIT"))
+                )
+                .externalDocs(new ExternalDocumentation()
+                        .description("Documentação do Projeto no GitHub")
+                        .url("https://github.com/c3ny/blood-stock-service"));
     }
 }
