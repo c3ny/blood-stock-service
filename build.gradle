@@ -21,7 +21,8 @@ repositories {
 
 javafx {
     version = "17.0.12"
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
+    // 👇 Adiciona o módulo do WebView
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.web' ]
 }
 
 dependencies {
@@ -29,32 +30,40 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.postgresql:postgresql'
+
+    // JavaFX
     implementation "org.openjfx:javafx-controls:17.0.12"
     implementation "org.openjfx:javafx-fxml:17.0.12"
+    implementation "org.openjfx:javafx-web:17.0.12" // 👈 Corrigido para mesma versão
+
+    // Utilitários
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.2'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'org.apache.logging.log4j:log4j-layout-template-json'
+
+    // PDF
+    implementation 'com.itextpdf:kernel:7.2.5'
+    implementation 'com.itextpdf:layout:7.2.5'
+
+    // Testes
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.2'
-    implementation 'com.itextpdf:kernel:7.2.5'
-    implementation 'com.itextpdf:layout:7.2.5'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
-    implementation 'org.apache.logging.log4j:log4j-layout-template-json'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
-    
-    // Excluir testes JavaFX no CI
+
     if (System.getenv("CI") == "true") {
         exclude '**/view/**'
     }
 }
 
 // ==================
-// Task para o Backend (Spring Boot)
+// Backend (Spring Boot)
 // ==================
 task runBackend(type: JavaExec) {
     group = 'application'
@@ -64,16 +73,17 @@ task runBackend(type: JavaExec) {
 }
 
 // ==================
-// Task para o Frontend (JavaFX)
+// Frontend (JavaFX)
 // ==================
 task runFrontend(type: JavaExec) {
     group = 'application'
     description = 'Roda apenas o frontend JavaFX'
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('com.example.view.BloodstockForm')
+
+    // 👇 Adiciona o módulo do WebView também aqui
     jvmArgs = [
-        '--module-path', configurations.runtimeClasspath.filter { it.name.startsWith("javafx") }.collect { it.absolutePath }.join(File.pathSeparator),
-        '--add-modules', 'javafx.controls,javafx.fxml'
+            '--module-path', configurations.runtimeClasspath.filter { it.name.startsWith("javafx") }.collect { it.absolutePath }.join(File.pathSeparator),
+            '--add-modules', 'javafx.controls,javafx.fxml,javafx.web'
     ]
 }
-

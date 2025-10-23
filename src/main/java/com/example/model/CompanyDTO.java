@@ -7,6 +7,7 @@ import java.util.UUID;
 public class CompanyDTO {
     private UUID id;
     private String name;
+    @JsonProperty("institution_name")
     private String institutionName;
 
     // Getters e Setters
@@ -19,4 +20,8 @@ public class CompanyDTO {
     public String getInstitutionName() { return institutionName; }
     public void setInstitutionName(String institutionName) { this.institutionName = institutionName; }
 
+    @Override
+    public String toString() {
+        return institutionName;
+    }
 }

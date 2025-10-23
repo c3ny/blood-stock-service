@@ -1,28 +1,204 @@
-/* src/main/resources/style.css */
+/* ========= Tema base ========= */
 .root {
-    -fx-background-color: #f4f4f4;
+    -fx-font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    -fx-background-color: #f5f7fb;
 }
 
-.button {
-    -fx-background-color: #007bff;
-    -fx-text-fill: white;
+/* ========= Header com contraste ========= */
+.header {
+    -fx-background-color: linear-gradient(to right, #C62828, #303F9F);
+    -fx-padding: 24px;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 18, 0, 0, 3);
+}
+.header-title {
+    -fx-font-size: 26px;
+    -fx-text-fill: #ffffff;   /* branco puro */
+    -fx-font-weight: 800;
+}
+.header-subtitle {
+    -fx-text-fill: rgba(255,255,255,0.95);  /* quase branco, bem legível */
     -fx-font-size: 14px;
-    -fx-padding: 8px 15px;
-    -fx-border-radius: 5px;
 }
 
-.button:hover {
-    -fx-background-color: #0056b3;
+/* ========= Área de conteúdo ========= */
+.content-area { -fx-background-color: transparent; }
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #263238;
 }
 
-.label {
+/* ========= Cards de sangue ========= */
+.blood-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+    -fx-alignment: center;
+    -fx-spacing: 6;
+    -fx-padding: 14px;
+}
+.blood-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 16, 0, 0, 4);
+    -fx-translate-y: -2px;
+}
+.blood-type-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #2c3e50;
+}
+.blood-quantity-label {
     -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #333;
+    -fx-text-fill: #37474f;
+}
+.blood-status-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #607d8b;
+}
+.blood-bar { -fx-accent: #5c6bc0; }
+.good-bar .bar    { -fx-background-color: #2e7d32; }
+.warning-bar .bar { -fx-background-color: #f1a208; }
+.critical-bar .bar{ -fx-background-color: #e53935; }
+
+/* ========= Form / Movimentação ========= */
+.form-section {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
+    -fx-padding: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+    -fx-alignment: center;
+}
+.field-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #455a64;
+    -fx-font-weight: 800;
+    -fx-letter-spacing: 0.2px;
+}
+.modern-combo, .modern-field {
+    -fx-background-color: #f8f9fc;
+    -fx-border-color: #d0d4e4;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 10 12;
+    -fx-font-size: 13px;
+}
+.modern-combo:focused, .modern-field:focused {
+    -fx-border-color: #5c6bc0;
+    -fx-background-color: #ffffff;
 }
 
-.text-field, .text-area {
-    -fx-border-color: #ccc;
-    -fx-border-radius: 3px;
-    -fx-padding: 5px;
+/* ========= Botões ========= */
+.primary-button {
+    -fx-background-color: linear-gradient(to bottom, #5c6bc0, #3f51b5);
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+    -fx-padding: 10 22;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+.primary-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #6e7ddc, #3f51b5);
+}
+.movement-button {
+    -fx-background-radius: 10;
+    -fx-padding: 10 18;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-cursor: hand;
+    -fx-border-width: 2px;
+}
+.entrada-button {
+    -fx-border-color: #2e7d32; -fx-text-fill: #2e7d32; -fx-background-color: transparent;
+}
+.entrada-button.active, .entrada-button:hover { -fx-background-color: #2e7d32; -fx-text-fill: #fff; }
+.saida-button {
+    -fx-border-color: #e53935; -fx-text-fill: #e53935; -fx-background-color: transparent;
+}
+.saida-button.active, .saida-button:hover { -fx-background-color: #e53935; -fx-text-fill: #fff; }
+
+.secondary-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #263238;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-padding: 10 16;
+    -fx-background-radius: 10;
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
+    -fx-cursor: hand;
+}
+.secondary-button:hover {
+    -fx-background-color: #5c6bc0;
+    -fx-text-fill: #ffffff;
+}
+.report-button { -fx-min-width: 210px; }
+
+/* ========= Status / Mensagens ========= */
+.status-label {
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-background-radius: 8;
+}
+.error-status   { -fx-background-color: rgba(229,57,53,0.10); -fx-text-fill: #e53935; }
+.success-status { -fx-background-color: rgba(46,125,50,0.12); -fx-text-fill: #2e7d32; }
+
+/* ========= Tabela ========= */
+.table-section {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
+    -fx-padding: 18px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+}
+
+.modern-table {
+    -fx-background-color: transparent;
+    -fx-border-color: #e2e6f3;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+}
+.modern-table .column-header-background {
+    -fx-background-color: linear-gradient(to bottom, #eef2ff, #e6e9ff);
+    -fx-background-radius: 12px 12px 0 0;
+}
+.modern-table .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1f2d3d;
+    -fx-padding: 12 8;
+}
+.modern-table .table-row-cell:odd  { -fx-background-color: #fafbff; }
+.modern-table .table-row-cell:even { -fx-background-color: #ffffff; }
+.modern-table .table-row-cell:hover {
+    -fx-background-color: #e8f0fe;
+}
+.modern-table .table-row-cell:selected {
+    -fx-background-color: #cfd8ff;
+}
+.qty-chip {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 4 8;
+    -fx-background-radius: 10;
+    -fx-font-weight: 800;
+    -fx-font-size: 12px;
+}
+.status-chip {
+    -fx-padding: 4 8;
+    -fx-background-radius: 10;
+    -fx-font-weight: 800;
+    -fx-font-size: 12px;
+    -fx-text-fill: white;
+}
+.status-good    { -fx-background-color: #2e7d32; }
+.status-warning { -fx-background-color: #f1a208; }
+.status-critical{ -fx-background-color: #e53935; }
+
+/* ========= Rodapé de relatórios ========= */
+.report-section {
+    -fx-padding: 8 0 0 0;
 }
