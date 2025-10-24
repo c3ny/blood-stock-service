@@ -51,7 +51,6 @@ public class BloodstockForm extends Application {
         mainLayout.getStyleClass().add("main-container");
         stage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
-
         VBox header = createHeader();
         mainLayout.setTop(header);
 

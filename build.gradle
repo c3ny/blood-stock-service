@@ -25,6 +25,8 @@ javafx {
     modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.web' ]
 }
 
+
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -52,6 +54,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    runtimeOnly 'com.h2database:h2'
+
+}
+
+bootJar {
+    archiveFileName = 'blood-stock-service.jar'
+    mainClass.set('com.example.MainLauncher')
 }
 
 tasks.named('test') {
