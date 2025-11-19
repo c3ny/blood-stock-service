@@ -1,8 +1,7 @@
 package com.example.view.service;
 
-import com.example.model.Bloodstock;
-import com.example.model.BloodstockMovement;
-import com.example.model.CompanyDTO;
+import com.example.model.*;
+import com.example.view.dto.BatchResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -72,6 +71,26 @@ public class BloodstockApiService {
                 });
     }
 
+    public String batchExitBulk(UUID companyId, BatchExitBulkRequestDTO dto) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(dto);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/company/" + companyId + "/batch-exit/bulk"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Erro ao registrar saída em lote: " + response.body());
+        }
+
+        return response.body();
+    }
+
+
+
     /**
      * Busca o histórico de movimentações de uma empresa de forma assíncrona.
      */
@@ -115,6 +134,72 @@ public class BloodstockApiService {
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
+    }
+
+    /**
+     * Atualiza a quantidade de um item de estoque de forma assíncrona.
+     */
+    /**
+     * Registra a entrada de estoque por lote de forma síncrona.
+     */
+    /**
+     * Busca todos os lotes disponíveis para uma empresa de forma síncrona.
+     */
+    public List<BatchResponseDTO> getAvailableBatches(UUID companyId) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/company/" + companyId + "/batches"))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Falha ao buscar lotes. Status: " + response.statusCode());
+        }
+
+        return parseBatchList(response.body());
+    }
+
+    /**
+     * Registra a saída de estoque por lote de forma síncrona.
+     */
+    public Batch batchExit(UUID companyId, BatchExitRequestDTO requestDTO) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(requestDTO);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/company/" + companyId + "/batch-exit"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Falha ao registrar saída de lote. Status: " + response.statusCode() + " - " + response.body());
+        }
+
+        return parseBatch(response.body());
+    }
+
+    public List<BatchResponseDTO> batchEntry(UUID companyId, BatchEntryRequestDTO requestDTO) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(requestDTO);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/company/" + companyId + "/batch-entry"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 201) {
+            throw new RuntimeException("Falha ao registrar entrada de lote. Status: " + response.statusCode() + " - " + response.body());
+        }
+
+        return parseBatchList(response.body());
     }
 
     /**
@@ -165,6 +250,24 @@ public class BloodstockApiService {
         } catch (Exception e) {
             System.err.println("Erro ao parsear histórico: " + e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    private List<BatchResponseDTO> parseBatchList(String json) {
+        try {
+            BatchResponseDTO[] batches = objectMapper.readValue(json, BatchResponseDTO[].class);
+            return Arrays.asList(batches);
+        } catch (Exception e) {
+            System.err.println("Erro ao parsear lista de lotes: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+    private Batch parseBatch(String json) {
+        try {
+            return objectMapper.readValue(json, Batch.class);
+        } catch (Exception e) {
+            System.err.println("Erro ao parsear lote: " + e.getMessage());
+            return null;
         }
     }
 

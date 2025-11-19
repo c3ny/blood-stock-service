@@ -35,7 +35,7 @@ public class MainLauncher extends Application {
                 Platform.runLater(() -> {
                     try {
                         splash.closeSplash();
-                        System.out.println("🩸 Abrindo interface principal...");
+                        System.out.println(" Abrindo interface principal...");
 
                         // Cria e configura a janela principal
                         Stage mainStage = new Stage();

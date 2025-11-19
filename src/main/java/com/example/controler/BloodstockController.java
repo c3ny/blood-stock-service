@@ -1,8 +1,6 @@
 package com.example.controler;
 
-import com.example.model.Bloodstock;
-import com.example.model.BloodstockMovement;
-import com.example.model.CompanyDTO;
+import com.example.model.*;
 import com.example.respository.BloodstockMovementRepository;
 import com.example.service.BloodstockService;
 import com.example.service.CompanyService;
@@ -12,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.model.BloodstockMovementRequestDTO;
+import com.example.exception.InsufficientStockException;
 import jakarta.validation.Valid;
 import com.example.model.Bloodstock;
 import com.example.service.BloodstockService;
@@ -60,6 +58,21 @@ public class BloodstockController {
     public Bloodstock createWithCompany(@RequestBody Bloodstock bloodstock, @PathVariable UUID companyId) {
         return bloodstockService.save(bloodstock, companyId);
     }
+
+
+    @PostMapping("/company/{companyId}/batch-exit/bulk")
+    public ResponseEntity<?> processBulkExit(
+            @PathVariable UUID companyId,
+            @Valid @RequestBody BatchExitBulkRequestDTO requestDTO
+    ) {
+        try {
+            bloodstockService.processBulkBatchExit(companyId, requestDTO);
+            return ResponseEntity.ok("Saída registrada com sucesso.");
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(e.getMessage());
+        }
+    }
+
 
     // Criar bloodstock sem company
     @PostMapping
@@ -153,6 +166,35 @@ public class BloodstockController {
 
         writer.flush();
         writer.close();
+    }
+
+    // Listar lotes disponíveis por empresa
+    @GetMapping("/company/{companyId}/batches")
+    public ResponseEntity<List<Batch>> getAvailableBatches(@PathVariable UUID companyId) {
+        try {
+            List<Batch> batches = bloodstockService.getAvailableBatches(companyId);
+            return ResponseEntity.ok(batches);
+        } catch (Exception e) {
+            log.error("Erro ao listar lotes disponíveis para a empresa {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+
+    // Entrada de estoque por lote
+    @PostMapping("/company/{companyId}/batch-entry")
+    public ResponseEntity<List<Batch>> batchEntry(
+            @PathVariable UUID companyId,
+            @Valid @RequestBody BatchEntryRequestDTO requestDTO
+    ) {
+        try {
+            Batch newBatch = bloodstockService.processBatchEntry(companyId, requestDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(List.of(newBatch));
+
+        } catch (Exception e) {
+            log.error("Erro ao processar entrada de lote para a empresa {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // ✅ Novo endpoint correto para relatório do histórico por empresa

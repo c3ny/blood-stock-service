@@ -197,6 +197,13 @@ public class BloodstockViewController {
     /**
      * Exibe um alerta de sucesso.
      */
+    public BloodstockApiService getApiService() {
+        return apiService;
+    }
+
+    /**
+     * Exibe um alerta de sucesso.
+     */
     public static void showSuccess(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Sucesso");

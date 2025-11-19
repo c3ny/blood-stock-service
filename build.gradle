@@ -89,7 +89,7 @@ task runFrontend(type: JavaExec) {
     group = 'application'
     description = 'Roda apenas o frontend JavaFX'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass.set('com.example.view.BloodstockForm')
+    mainClass.set('com.example.view.BloodstockFormRefactored')
 
     // 👇 Adiciona o módulo do WebView também aqui
     jvmArgs = [

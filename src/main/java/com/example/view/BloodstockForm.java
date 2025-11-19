@@ -26,6 +26,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
+import com.example.view.BatchEntryForm;
+import com.example.view.BatchExitForm;
 
 public class BloodstockForm extends Application {
 
@@ -255,6 +258,13 @@ public class BloodstockForm extends Application {
         HBox buttons = new HBox(16);
         buttons.setAlignment(Pos.CENTER);
 
+        Button entradaLote = new Button("➕ Entrada Lote");
+        entradaLote.getStyleClass().addAll("movement-button", "entrada-button");
+
+        Button saidaLote = new Button("➖ Saída Lote");
+        saidaLote.getStyleClass().addAll("movement-button", "saida-button");
+        buttons.setAlignment(Pos.CENTER);
+
         Button entrada = new Button("⬆ Entrada");
         entrada.getStyleClass().addAll("movement-button", "entrada-button");
 
@@ -268,6 +278,18 @@ public class BloodstockForm extends Application {
             submitButton.setText("🔼 Registrar Entrada");
             entrada.getStyleClass().add("active");
             saida.getStyleClass().remove("active");
+            entradaLote.getStyleClass().remove("active");
+            saidaLote.getStyleClass().remove("active");
+        });
+
+        entradaLote.setOnAction(e -> {
+            CompanyDTO selectedCompany = companyComboBox.getValue();
+            if (selectedCompany != null) {
+                Consumer<UUID> updateCallback = this::loadStockForCompany;
+                new BatchEntryForm((Stage) entradaLote.getScene().getWindow(), controller.getApiService(), selectedCompany.getId(), updateCallback).show();
+            } else {
+                showError("Selecione uma empresa para realizar a entrada por lote.");
+            }
         });
 
         saida.setOnAction(e -> {
@@ -277,9 +299,21 @@ public class BloodstockForm extends Application {
             submitButton.setText("🔽 Registrar Saída");
             saida.getStyleClass().add("active");
             entrada.getStyleClass().remove("active");
+            entradaLote.getStyleClass().remove("active");
+            saidaLote.getStyleClass().remove("active");
         });
 
-        buttons.getChildren().addAll(entrada, saida);
+        saidaLote.setOnAction(e -> {
+            CompanyDTO selectedCompany = companyComboBox.getValue();
+            if (selectedCompany != null) {
+                Consumer<UUID> updateCallback = this::loadStockForCompany;
+                new BatchExitForm((Stage) saidaLote.getScene().getWindow(), controller.getApiService(), selectedCompany.getId(), updateCallback).show();
+            } else {
+                showError("Selecione uma empresa para realizar a saída por lote.");
+            }
+        });
+
+        buttons.getChildren().addAll(entrada, entradaLote, saida, saidaLote);
         box.getChildren().addAll(label, buttons);
         return box;
     }
@@ -517,25 +551,25 @@ public class BloodstockForm extends Application {
         return html.toString();
     }
 
-            // ====================================================
-        // Exportar WebView para PDF
-        // ====================================================
-            private void printToPdf(javafx.scene.web.WebView webView) {
-                PrinterJob job = PrinterJob.createPrinterJob();
-                if (job != null) {
-                    boolean proceed = job.showPrintDialog(webView.getScene().getWindow());
-                    if (proceed) {
-                        try {
-                            webView.getEngine().print(job);
-                            job.endJob();
-                            showAlert("PDF gerado com sucesso!", Alert.AlertType.INFORMATION);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            showAlert("Erro ao gerar PDF: " + e.getMessage(), Alert.AlertType.ERROR);
-                        }
-                    }
+    // ====================================================
+    // Exportar WebView para PDF
+    // ====================================================
+    private void printToPdf(javafx.scene.web.WebView webView) {
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job != null) {
+            boolean proceed = job.showPrintDialog(webView.getScene().getWindow());
+            if (proceed) {
+                try {
+                    webView.getEngine().print(job);
+                    job.endJob();
+                    showAlert("PDF gerado com sucesso!", Alert.AlertType.INFORMATION);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showAlert("Erro ao gerar PDF: " + e.getMessage(), Alert.AlertType.ERROR);
                 }
             }
+        }
+    }
 
     private void showAlert(String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
@@ -611,7 +645,7 @@ public class BloodstockForm extends Application {
         controller.loadCompanies(this::showError);
     }
 
-    private void loadStockForCompany(java.util.UUID id) {
+    public void loadStockForCompany(java.util.UUID id) {
         controller.loadBloodstockByCompany(id, this::showError);
         refreshBloodCards();
     }
