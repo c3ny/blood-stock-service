@@ -22,7 +22,7 @@ public class MdcFilter implements Filter {
             ThreadContext.put("requestId", requestId);
             chain.doFilter(request, response);
         } finally {
-            ThreadContext.clearAll(); // Limpar o MDC após a requisição
+            ThreadContext.clearAll();
         }
     }
 }

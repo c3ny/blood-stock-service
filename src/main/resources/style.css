@@ -1,35 +1,69 @@
-/* ========= Tema base ========= */
+/* ========= VARIÁVEIS E TEMA BASE ========= */
 .root {
     -fx-font-family: "Segoe UI", Roboto, Arial, sans-serif;
     -fx-background-color: #f5f7fb;
+
+    /* Cores */
+    -color-primary: #5c6bc0;
+    -color-success: #2e7d32;
+    -color-warning: #f1a208;
+    -color-danger: #e53935;
+    -color-text: #263238;
+    -color-text-light: #455a64;
+
+    /* Espaçamentos */
+    -spacing-xs: 6px;
+    -spacing-sm: 10px;
+    -spacing-md: 14px;
+    -spacing-lg: 22px;
+
+    /* Raios */
+    -radius-sm: 8px;
+    -radius-md: 12px;
+    -radius-lg: 16px;
+
+    /* Sombras */
+    -shadow-sm: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
+    -shadow-md: dropshadow(gaussian, rgba(0,0,0,0.16), 16, 0, 0, 4);
 }
 
-/* ========= Header com contraste ========= */
+/* ========= HEADER COM CONTRASTE ========= */
 .header {
     -fx-background-color: linear-gradient(to right, #C62828, #303F9F);
     -fx-padding: 24px;
     -fx-alignment: center;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 18, 0, 0, 3);
 }
+
 .header-title {
     -fx-font-size: 26px;
-    -fx-text-fill: #ffffff;   /* branco puro */
+    -fx-text-fill: #ffffff;
     -fx-font-weight: 800;
 }
+
 .header-subtitle {
-    -fx-text-fill: rgba(255,255,255,0.95);  /* quase branco, bem legível */
+    -fx-text-fill: #ffffff;
     -fx-font-size: 14px;
+    -fx-font-weight: 600;
 }
 
-/* ========= Área de conteúdo ========= */
-.content-area { -fx-background-color: transparent; }
+/* ========= ÁREA DE CONTEÚDO ========= */
+.content-area {
+    -fx-background-color: transparent;
+}
+
+.content-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
 .section-title {
     -fx-font-size: 18px;
     -fx-font-weight: 800;
     -fx-text-fill: #263238;
 }
 
-/* ========= Cards de sangue ========= */
+/* ========= CARDS DE SANGUE ========= */
 .blood-card {
     -fx-background-color: #ffffff;
     -fx-background-radius: 12px;
@@ -39,29 +73,45 @@
     -fx-spacing: 6;
     -fx-padding: 14px;
 }
+
 .blood-card:hover {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 16, 0, 0, 4);
     -fx-translate-y: -2px;
 }
+
 .blood-type-label {
     -fx-font-size: 20px;
     -fx-font-weight: 800;
     -fx-text-fill: #2c3e50;
 }
+
 .blood-quantity-label {
     -fx-font-size: 13px;
     -fx-text-fill: #37474f;
 }
+
 .blood-status-label {
     -fx-font-size: 12px;
     -fx-text-fill: #607d8b;
 }
-.blood-bar { -fx-accent: #5c6bc0; }
-.good-bar .bar    { -fx-background-color: #2e7d32; }
-.warning-bar .bar { -fx-background-color: #f1a208; }
-.critical-bar .bar{ -fx-background-color: #e53935; }
 
-/* ========= Form / Movimentação ========= */
+.blood-bar {
+    -fx-accent: #5c6bc0;
+}
+
+.good-bar .bar {
+    -fx-background-color: #2e7d32;
+}
+
+.warning-bar .bar {
+    -fx-background-color: #f1a208;
+}
+
+.critical-bar .bar {
+    -fx-background-color: #e53935;
+}
+
+/* ========= FORM / MOVIMENTAÇÃO ========= */
 .form-section {
     -fx-background-color: #ffffff;
     -fx-background-radius: 16px;
@@ -70,13 +120,16 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 3);
     -fx-alignment: center;
 }
+
 .field-label {
     -fx-font-size: 12px;
     -fx-text-fill: #455a64;
     -fx-font-weight: 800;
     -fx-letter-spacing: 0.2px;
 }
-.modern-combo, .modern-field {
+
+.modern-combo,
+.modern-field {
     -fx-background-color: #f8f9fc;
     -fx-border-color: #d0d4e4;
     -fx-border-radius: 8px;
@@ -84,12 +137,16 @@
     -fx-padding: 10 12;
     -fx-font-size: 13px;
 }
-.modern-combo:focused, .modern-field:focused {
+
+.modern-combo:focused,
+.modern-field:focused {
     -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
     -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.3), 8, 0, 0, 0);
 }
 
-/* ========= Botões ========= */
+/* ========= BOTÕES ========= */
 .primary-button {
     -fx-background-color: linear-gradient(to bottom, #5c6bc0, #3f51b5);
     -fx-text-fill: white;
@@ -99,9 +156,28 @@
     -fx-background-radius: 10;
     -fx-cursor: hand;
 }
+
 .primary-button:hover {
     -fx-background-color: linear-gradient(to bottom, #6e7ddc, #3f51b5);
 }
+
+.primary-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #3f51b5, #303f9f);
+    -fx-translate-y: 1px;
+}
+
+.primary-button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+.primary-button:focused {
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.4), 8, 0, 0, 0);
+}
+
+/* Botões de Movimentação */
 .movement-button {
     -fx-background-radius: 10;
     -fx-padding: 10 18;
@@ -109,16 +185,37 @@
     -fx-font-weight: 800;
     -fx-cursor: hand;
     -fx-border-width: 2px;
+    -fx-background-color: transparent;
 }
-.entrada-button {
-    -fx-border-color: #2e7d32; -fx-text-fill: #2e7d32; -fx-background-color: transparent;
-}
-.entrada-button.active, .entrada-button:hover { -fx-background-color: #2e7d32; -fx-text-fill: #fff; }
-.saida-button {
-    -fx-border-color: #e53935; -fx-text-fill: #e53935; -fx-background-color: transparent;
-}
-.saida-button.active, .saida-button:hover { -fx-background-color: #e53935; -fx-text-fill: #fff; }
 
+.entrada-button {
+    -fx-border-color: #2e7d32;
+    -fx-text-fill: #2e7d32;
+}
+
+.entrada-button.active,
+.entrada-button:hover {
+    -fx-background-color: #2e7d32;
+    -fx-text-fill: #fff;
+}
+
+.saida-button {
+    -fx-border-color: #e53935;
+    -fx-text-fill: #e53935;
+}
+
+.saida-button.active,
+.saida-button:hover {
+    -fx-background-color: #e53935;
+    -fx-text-fill: #fff;
+}
+
+.movement-button:disabled {
+    -fx-opacity: 0.4;
+    -fx-cursor: default;
+}
+
+/* Botões Secundários */
 .secondary-button {
     -fx-background-color: #ffffff;
     -fx-text-fill: #263238;
@@ -130,23 +227,44 @@
     -fx-border-width: 2px;
     -fx-cursor: hand;
 }
+
 .secondary-button:hover {
     -fx-background-color: #5c6bc0;
     -fx-text-fill: #ffffff;
 }
-.report-button { -fx-min-width: 210px; }
 
-/* ========= Status / Mensagens ========= */
+.secondary-button:focused {
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.4), 8, 0, 0, 0);
+}
+
+.report-button {
+    -fx-min-width: 210px;
+}
+
+/* ========= STATUS / MENSAGENS ========= */
 .status-label {
     -fx-padding: 10 16;
     -fx-font-size: 13px;
     -fx-font-weight: 800;
     -fx-background-radius: 8;
 }
-.error-status   { -fx-background-color: rgba(229,57,53,0.10); -fx-text-fill: #e53935; }
-.success-status { -fx-background-color: rgba(46,125,50,0.12); -fx-text-fill: #2e7d32; }
 
-/* ========= Tabela ========= */
+.error-status {
+    -fx-background-color: rgba(229,57,53,0.10);
+    -fx-text-fill: #e53935;
+}
+
+.success-status {
+    -fx-background-color: rgba(46,125,50,0.12);
+    -fx-text-fill: #2e7d32;
+}
+
+.warning-status {
+    -fx-background-color: rgba(245,124,0,0.12);
+    -fx-text-fill: #e65100;
+}
+
+/* ========= TABELA PRINCIPAL ========= */
 .table-section {
     -fx-background-color: #ffffff;
     -fx-background-radius: 16px;
@@ -161,24 +279,42 @@
     -fx-border-radius: 12px;
     -fx-background-radius: 12px;
 }
+
 .modern-table .column-header-background {
     -fx-background-color: linear-gradient(to bottom, #eef2ff, #e6e9ff);
     -fx-background-radius: 12px 12px 0 0;
 }
+
 .modern-table .column-header {
     -fx-background-color: transparent;
     -fx-font-weight: 800;
     -fx-text-fill: #1f2d3d;
     -fx-padding: 12 8;
 }
-.modern-table .table-row-cell:odd  { -fx-background-color: #fafbff; }
-.modern-table .table-row-cell:even { -fx-background-color: #ffffff; }
+
+.modern-table .table-row-cell:odd {
+    -fx-background-color: #fafbff;
+}
+
+.modern-table .table-row-cell:even {
+    -fx-background-color: #ffffff;
+}
+
 .modern-table .table-row-cell:hover {
     -fx-background-color: #e8f0fe;
 }
+
 .modern-table .table-row-cell:selected {
     -fx-background-color: #cfd8ff;
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 0 0 0 3px;
 }
+
+.modern-table:focused .table-row-cell:selected {
+    -fx-background-color: #c5cae9;
+}
+
+/* Chips da Tabela */
 .qty-chip {
     -fx-background-color: #e8f0fe;
     -fx-text-fill: #1a237e;
@@ -187,6 +323,7 @@
     -fx-font-weight: 800;
     -fx-font-size: 12px;
 }
+
 .status-chip {
     -fx-padding: 4 8;
     -fx-background-radius: 10;
@@ -194,11 +331,500 @@
     -fx-font-size: 12px;
     -fx-text-fill: white;
 }
-.status-good    { -fx-background-color: #2e7d32; }
-.status-warning { -fx-background-color: #f1a208; }
-.status-critical{ -fx-background-color: #e53935; }
 
-/* ========= Rodapé de relatórios ========= */
+.status-good {
+    -fx-background-color: #2e7d32;
+}
+
+.status-warning {
+    -fx-background-color: #f1a208;
+}
+
+.status-critical {
+    -fx-background-color: #e53935;
+}
+
+/* ========= RODAPÉ DE RELATÓRIOS ========= */
 .report-section {
     -fx-padding: 8 0 0 0;
+}
+
+/* ========= MODAL / DIALOG STYLES ========= */
+.modal-container {
+    -fx-background-color: #f8f9fc;
+    -fx-background-radius: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 24, 0, 0, 4);
+}
+
+.modal-header {
+    -fx-padding: 0 0 15 0;
+    -fx-border-color: transparent transparent #e2e6f3 transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.modal-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #263238;
+}
+
+.modal-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #607d8b;
+    -fx-font-weight: 500;
+}
+
+/* ========= FORM GRID (MODAL) ========= */
+.modal-form-grid {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);
+}
+
+.batch-code-container {
+    -fx-background-color: #e8f0fe;
+    -fx-background-radius: 10px;
+    -fx-padding: 14px;
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 0 0 0 4;
+    -fx-border-radius: 10px;
+}
+
+.field-label-primary {
+    -fx-font-size: 13px;
+    -fx-text-fill: #1a237e;
+    -fx-font-weight: 800;
+    -fx-letter-spacing: 0.3px;
+}
+
+.modern-field-large {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c5cae9;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12 14;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1a237e;
+}
+
+.modern-field-large:focused {
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.3), 8, 0, 0, 0);
+}
+
+/* ========= SEPARADOR ========= */
+.form-separator {
+    -fx-background-color: #e2e6f3;
+    -fx-padding: 8 0;
+}
+
+.instruction-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #455a64;
+    -fx-font-weight: 600;
+    -fx-padding: 5 0;
+}
+
+/* ========= CAMPOS DE TIPO SANGUÍNEO ========= */
+.blood-type-field-box {
+    -fx-padding: 8px;
+    -fx-background-color: transparent;
+}
+
+.blood-type-field-box:hover {
+    -fx-background-color: rgba(92,107,192,0.04);
+    -fx-background-radius: 8px;
+}
+
+.blood-type-badge {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 4 10;
+    -fx-background-radius: 6px;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-min-width: 50px;
+    -fx-alignment: center;
+}
+
+/* ========= BOTÕES DO MODAL ========= */
+.clear-button {
+    -fx-min-width: 140px;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #f1a208;
+    -fx-border-width: 2px;
+    -fx-text-fill: #f1a208;
+}
+
+.clear-button:hover {
+    -fx-background-color: #fff3e0;
+    -fx-border-color: #f57c00;
+    -fx-text-fill: #f57c00;
+}
+
+.save-button {
+    -fx-min-width: 160px;
+}
+
+/* ========= STATUS ESPECÍFICO DO MODAL ========= */
+.modal-container .status-label {
+    -fx-padding: 12 18;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+
+.modal-container .error-status {
+    -fx-background-color: rgba(229,57,53,0.12);
+    -fx-text-fill: #c62828;
+    -fx-border-color: #e53935;
+    -fx-border-width: 0 0 0 3;
+}
+
+.modal-container .success-status {
+    -fx-background-color: rgba(46,125,50,0.12);
+    -fx-text-fill: #1b5e20;
+    -fx-border-color: #2e7d32;
+    -fx-border-width: 0 0 0 3;
+}
+
+.modal-container .warning-status {
+    -fx-background-color: rgba(245,124,0,0.12);
+    -fx-text-fill: #e65100;
+    -fx-border-color: #f57c00;
+    -fx-border-width: 0 0 0 3;
+}
+
+/* ========= SCROLLPANE DO MODAL ========= */
+.modal-container .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.modal-container .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ========= BATCH EXIT FORM - TABELA DE LOTES ========= */
+.batch-table-section {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);
+}
+
+.subsection-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #263238;
+}
+
+.batch-count-badge {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 4 12;
+    -fx-background-radius: 12px;
+    -fx-font-weight: 800;
+    -fx-font-size: 11px;
+}
+
+/* Tabela de Lotes */
+.batch-table {
+    -fx-background-color: transparent;
+    -fx-border-color: #e2e6f3;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+}
+
+.batch-table .column-header-background {
+    -fx-background-color: linear-gradient(to bottom, #f5f7fb, #eef2ff);
+    -fx-background-radius: 10px 10px 0 0;
+}
+
+.batch-table .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: 800;
+    -fx-text-fill: #263238;
+    -fx-padding: 10 8;
+    -fx-font-size: 12px;
+}
+
+.batch-table .table-row-cell {
+    -fx-padding: 8px;
+}
+
+.batch-table .table-row-cell:odd {
+    -fx-background-color: #fafbff;
+}
+
+.batch-table .table-row-cell:even {
+    -fx-background-color: #ffffff;
+}
+
+.batch-table .table-row-cell:hover {
+    -fx-background-color: #e8f0fe;
+    -fx-cursor: hand;
+}
+
+.batch-table .table-row-cell:selected {
+    -fx-background-color: #cfd8ff;
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 0 0 0 3px;
+}
+
+.batch-table:focused .table-row-cell:selected {
+    -fx-background-color: #c5cae9;
+}
+
+.batch-table .placeholder .label {
+    -fx-text-fill: #90a4ae;
+    -fx-font-style: italic;
+    -fx-font-size: 13px;
+}
+
+/* Chips da Tabela de Lotes */
+.batch-code-chip {
+    -fx-background-color: #fff3e0;
+    -fx-text-fill: #e65100;
+    -fx-padding: 5 10;
+    -fx-background-radius: 8px;
+    -fx-font-weight: 800;
+    -fx-font-size: 11px;
+    -fx-border-color: #ffb74d;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+}
+
+.batch-code-chip:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.blood-type-badge-table {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 5 12;
+    -fx-background-radius: 8px;
+    -fx-font-weight: 800;
+    -fx-font-size: 12px;
+    -fx-min-width: 50px;
+    -fx-alignment: center;
+}
+
+.blood-type-badge-table:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+/* ========= BATCH EXIT - FORMULÁRIO DE SAÍDA ========= */
+.exit-form-section {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 18px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);
+}
+
+.available-quantity-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #2e7d32;
+    -fx-font-weight: 700;
+    -fx-background-color: rgba(46,125,50,0.08);
+    -fx-background-radius: 6px;
+    -fx-padding: 6 10;
+    -fx-border-color: #2e7d32;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-radius: 6px;
+}
+
+/* Botões Específicos do Exit Form */
+.refresh-button {
+    -fx-min-width: 150px;
+    -fx-border-color: #5c6bc0;
+}
+
+.refresh-button:hover {
+    -fx-background-color: #e8f0fe;
+    -fx-border-color: #3f51b5;
+}
+
+.exit-button {
+    -fx-min-width: 180px;
+    -fx-background-color: linear-gradient(to bottom, #e53935, #c62828);
+}
+
+.exit-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #ef5350, #e53935);
+}
+
+.exit-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #c62828, #b71c1c);
+    -fx-translate-y: 1px;
+}
+
+/* ComboBox de Lotes */
+.batch-table-section .modern-combo {
+    -fx-pref-width: 350px;
+}
+
+.batch-table-section .modern-combo .list-cell {
+    -fx-padding: 8 12;
+}
+
+.batch-table-section .modern-combo .list-cell:hover {
+    -fx-background-color: #e8f0fe;
+}
+
+/* ========= TOOLTIP CUSTOMIZADO ========= */
+.tooltip {
+    -fx-background-color: #263238;
+    -fx-text-fill: white;
+    -fx-background-radius: 6px;
+    -fx-padding: 6 10;
+    -fx-font-size: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);
+}
+
+/* ========= BADGES MÚLTIPLOS NA TABELA ========= */
+.blood-type-badge-table {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 3 8;
+    -fx-background-radius: 6px;
+    -fx-font-weight: 800;
+    -fx-font-size: 10px;
+    -fx-min-width: 35px;
+    -fx-alignment: center;
+}
+
+.blood-type-badge-table:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+/* ========= BATCH EXIT BULK FORM STYLES ========= */
+
+/* Seção de Seleção de Lote */
+.bulk-batch-section {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 18px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);
+}
+
+.modern-combo-large {
+    -fx-background-color: #f8f9fc;
+    -fx-border-color: #d0d4e4;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 12 16;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+}
+
+.modern-combo-large:focused {
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
+    -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.3), 10, 0, 0, 0);
+}
+
+/* Grid Container */
+.bulk-grid-container {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-padding: 18px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);
+}
+
+.bulk-blood-grid {
+    -fx-background-color: transparent;
+}
+
+/* Linha de Tipo Sanguíneo */
+.bulk-blood-row {
+    -fx-background-color: #f8f9fc;
+    -fx-background-radius: 10px;
+    -fx-padding: 10px 16px;
+    -fx-border-color: #e2e6f3;
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+}
+
+.bulk-blood-row:hover {
+    -fx-background-color: #eef2ff;
+    -fx-border-color: #c5cae9;
+}
+
+/* Badge de Tipo Sanguíneo */
+.blood-type-badge-bulk {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1a237e;
+    -fx-padding: 6 14;
+    -fx-background-radius: 8px;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+    -fx-border-color: #9fa8da;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+}
+
+/* Label de Disponível */
+.available-label-bulk {
+    -fx-font-size: 12px;
+    -fx-text-fill: #2e7d32;
+    -fx-font-weight: 700;
+}
+
+.available-label-bulk.unavailable {
+    -fx-text-fill: #e53935;
+}
+
+/* Campo de Input */
+.modern-field-bulk {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c5cae9;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.modern-field-bulk:focused {
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(92,107,192,0.3), 8, 0, 0, 0);
+}
+
+.modern-field-bulk:disabled {
+    -fx-opacity: 0.5;
+    -fx-background-color: #f5f5f5;
+}
+
+/* Label de Total */
+.total-quantity-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1a237e;
+    -fx-font-weight: 800;
+    -fx-background-color: #e8f0fe;
+    -fx-background-radius: 10px;
+    -fx-padding: 12 18;
+    -fx-border-color: #5c6bc0;
+    -fx-border-width: 0 0 0 4px;
+    -fx-border-radius: 10px;
+    -fx-alignment: center;
+}
+
+/* Animações */
+.bulk-blood-row .modern-field-bulk:focused {
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.blood-type-badge-bulk:hover {
+    -fx-background-color: #c5cae9;
 }

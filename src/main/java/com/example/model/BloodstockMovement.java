@@ -35,8 +35,19 @@ public class BloodstockMovement {
     }
 
     public BloodstockMovement() {
-
     }
+
+    public BloodstockMovement(int quantityBefore, int quantityAfter, String actionBy, String notes, UUID batchId) {
+        this.movement = quantityAfter < quantityBefore ? -1 : 1;
+        this.quantityBefore = quantityBefore;
+        this.quantityAfter = quantityAfter;
+        this.actionBy = actionBy;
+        this.notes = notes != null ? notes : "Movimentação por lote: " + batchId;
+        this.actionDate = LocalDateTime.now();
+    }
+
+
+
 
     // Getters e Setters
     public UUID getId() {
