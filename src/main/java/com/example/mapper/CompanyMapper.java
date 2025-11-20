@@ -4,13 +4,11 @@ import com.example.entity.Company;
 import com.example.model.CompanyDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface CompanyMapper {
 
-    CompanyMapper INSTANCE = Mappers.getMapper(CompanyMapper.class);
-
+    @Mapping(target = "name", expression = "java(company.getName() != null ? company.getName() : company.getInstitutionName())")
     CompanyDTO toDTO(Company company);
 
     @Mapping(target = "cnpj", ignore = true)

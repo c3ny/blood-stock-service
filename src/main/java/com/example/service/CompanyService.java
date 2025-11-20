@@ -14,13 +14,13 @@ import java.util.stream.Collectors;
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
-    private final CompanyMapper mapper = CompanyMapper.INSTANCE;
+    private final CompanyMapper mapper;
 
-    public CompanyService(CompanyRepository companyRepository) {
+    public CompanyService(CompanyRepository companyRepository, CompanyMapper mapper) {
         this.companyRepository = companyRepository;
+        this.mapper = mapper;
     }
 
-    // Lista todas as empresas como DTO
     public List<CompanyDTO> listAll() {
         return companyRepository.findAll()
                 .stream()
@@ -28,7 +28,6 @@ public class CompanyService {
                 .collect(Collectors.toList());
     }
 
-    // Busca empresa por id como DTO
     public CompanyDTO findById(UUID id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
@@ -36,7 +35,6 @@ public class CompanyService {
     }
 
     public boolean existsById(UUID companyId) {
-        return listAll().stream().anyMatch(c -> c.getId().equals(companyId));
+        return companyRepository.existsById(companyId);
     }
-
 }

@@ -5,6 +5,12 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.14'
 }
+configurations {
+    annotationProcessor {
+        extendsFrom compileClasspath
+    }
+}
+
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
@@ -28,6 +34,9 @@ javafx {
 
 
 dependencies {
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -58,6 +67,9 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
 
 }
+
+
+
 
 bootJar {
     archiveFileName = 'blood-stock-service.jar'
@@ -91,9 +103,19 @@ task runFrontend(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('com.example.view.BloodstockFormRefactored')
 
-    // 👇 Adiciona o módulo do WebView também aqui
     jvmArgs = [
             '--module-path', configurations.runtimeClasspath.filter { it.name.startsWith("javafx") }.collect { it.absolutePath }.join(File.pathSeparator),
             '--add-modules', 'javafx.controls,javafx.fxml,javafx.web'
     ]
 }
+
+// ========= FIX DO MAPSTRUCT (GLOBAL) =========
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [
+            '-Amapstruct.defaultComponentModel=spring'
+    ]
+    options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+
+
