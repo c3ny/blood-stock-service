@@ -5,7 +5,7 @@ import com.example.model.CompanyDTO;
 import com.example.respository.CompanyRepository;
 import com.example.mapper.CompanyMapper;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,7 +34,12 @@ public class CompanyService {
         return mapper.toDTO(company);
     }
 
+    /**
+     * Verifica se a empresa existe (leitura apenas).
+     */
+    @Transactional(readOnly = true)
     public boolean existsById(UUID companyId) {
         return companyRepository.existsById(companyId);
     }
 }
+
