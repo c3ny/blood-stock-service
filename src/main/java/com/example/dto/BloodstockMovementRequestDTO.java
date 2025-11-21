@@ -1,8 +1,9 @@
-package com.example.model;
+package com.example.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.UUID;
 
 @Schema(description = "DTO para requisição de movimentação de estoque de sangue") // Anotação movida para a classe principal

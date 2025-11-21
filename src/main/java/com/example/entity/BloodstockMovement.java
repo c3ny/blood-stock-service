@@ -1,8 +1,7 @@
-package com.example.model;
+package com.example.entity;
 
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

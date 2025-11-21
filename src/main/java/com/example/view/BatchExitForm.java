@@ -1,8 +1,6 @@
 package com.example.view;
 
-import com.example.entity.BatchBlood;
-import com.example.model.Batch;
-import com.example.model.BatchExitRequestDTO;
+import com.example.dto.BatchExitRequestDTO;
 import com.example.view.dto.BatchResponseDTO;
 import com.example.view.dto.BloodDetailDTO;
 import com.example.view.service.BloodstockApiService;

@@ -1,8 +1,8 @@
 package com.example.service;
 
 import com.example.entity.Company;
-import com.example.model.CompanyDTO;
-import com.example.respository.CompanyRepository;
+import com.example.dto.CompanyDTO;
+import com.example.repository.CompanyRepository;
 import com.example.mapper.CompanyMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

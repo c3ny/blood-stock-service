@@ -1,10 +1,9 @@
-package com.example.model;
+package com.example.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.example.entity.Company;
 
 @NamedQuery(
         name = "Bloodstock.findAllByCompanyId",
