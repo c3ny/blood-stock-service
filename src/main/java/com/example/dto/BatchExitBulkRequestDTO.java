@@ -1,9 +1,11 @@
 package com.example.dto;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
 import java.util.Map;
 import java.util.UUID;
-
+@Data
 public class BatchExitBulkRequestDTO {
 
     @NotNull(message = "O lote é obrigatório")

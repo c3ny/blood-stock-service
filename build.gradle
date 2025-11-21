@@ -89,7 +89,7 @@ dependencies {
 
 bootJar {
     archiveFileName = 'blood-stock-service.jar'
-    mainClass.set('com.example.MainLauncher')
+    mainClass.set('com.example.BloodStockServiceApplication')
 }
 
 tasks.named('test') {
@@ -117,7 +117,7 @@ task runFrontend(type: JavaExec) {
     group = 'application'
     description = 'Roda apenas o frontend JavaFX'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass.set('com.example.view.BloodstockFormRefactored')
+    mainClass.set('com.example.view.LoginForm')
 
     jvmArgs = [
             '--module-path', configurations.runtimeClasspath.filter { it.name.startsWith("javafx") }.collect { it.absolutePath }.join(File.pathSeparator),

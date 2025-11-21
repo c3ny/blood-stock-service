@@ -9,13 +9,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "users") // evita conflito com palavra reservada
+@ToString(exclude = "password")
 public class User implements UserDetails {
 
     @Id
