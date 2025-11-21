@@ -3,8 +3,10 @@ package com.example.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import java.util.Map;
+import lombok.Data;
 
+import java.util.Map;
+@Data
 public class BatchEntryRequestDTO {
 
     @NotBlank(message = "O código do lote é obrigatório")
