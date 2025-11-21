@@ -1,6 +1,13 @@
 # 🩸 Blood Stock Service
 
-Sistema completo de gerenciamento de estoque de sangue desenvolvido com **Spring Boot** (backend) e **JavaFX** (frontend), seguindo as melhores práticas de desenvolvimento com arquitetura MVC, documentação automática de API e sistema de logs estruturado.
+Sistema modular para gerenciamento de estoque sanguíneo com Spring Boot + JavaFX + PostgreSQL
+
+![Java](https://img.shields.io/badge/Java-17-red?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-brightgreen?logo=springboot)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)
+![Gradle](https://img.shields.io/badge/Gradle-8.x-02303A?logo=gradle)
+![Status](https://img.shields.io/badge/Status-Ativo-success)
+
 
 ---
 
