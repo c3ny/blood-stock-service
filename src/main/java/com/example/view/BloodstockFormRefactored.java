@@ -1,8 +1,8 @@
 package com.example.view;
 
-import com.example.model.Bloodstock;
-import com.example.model.BloodstockMovement;
-import com.example.model.CompanyDTO;
+import com.example.entity.Bloodstock;
+import com.example.entity.BloodstockMovement;
+import com.example.dto.CompanyDTO;
 import com.example.view.controller.BloodstockViewController;
 import javafx.animation.*;
 import javafx.application.Application;
@@ -26,8 +26,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import com.example.view.BatchEntryForm;
-import com.example.view.BatchExitForm;
 
 public class BloodstockFormRefactored extends Application {
 

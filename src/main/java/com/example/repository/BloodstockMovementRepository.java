@@ -1,9 +1,7 @@
-package com.example.respository;
+package com.example.repository;
 
-import com.example.model.BloodstockMovement;
+import com.example.entity.BloodstockMovement;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

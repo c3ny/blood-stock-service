@@ -1,7 +1,12 @@
-package com.example.controler;
+package com.example.controller;
 
-import com.example.model.*;
-import com.example.respository.BloodstockMovementRepository;
+import com.example.dto.BatchEntryRequestDTO;
+import com.example.dto.BatchExitBulkRequestDTO;
+import com.example.dto.BloodstockMovementRequestDTO;
+import com.example.dto.CompanyDTO;
+import com.example.entity.Batch;
+import com.example.entity.BloodstockMovement;
+import com.example.repository.BloodstockMovementRepository;
 import com.example.service.BloodstockService;
 import com.example.service.CompanyService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,26 +15,14 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.exception.InsufficientStockException;
 import jakarta.validation.Valid;
-import com.example.model.Bloodstock;
-import com.example.service.BloodstockService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import com.example.entity.Bloodstock;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController

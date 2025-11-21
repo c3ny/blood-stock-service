@@ -1,13 +1,12 @@
 package com.example.service;
 
-import com.example.entity.BatchBlood;
+import com.example.dto.BatchEntryRequestDTO;
+import com.example.dto.BatchExitBulkRequestDTO;
+import com.example.entity.*;
 import com.example.exception.InsufficientStockException;
-import com.example.model.*;
-import com.example.entity.Company;
-import com.example.respository.*;
+import com.example.repository.*;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;

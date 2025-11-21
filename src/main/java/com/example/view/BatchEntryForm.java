@@ -1,6 +1,6 @@
 package com.example.view;
 
-import com.example.model.BatchEntryRequestDTO;
+import com.example.dto.BatchEntryRequestDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;

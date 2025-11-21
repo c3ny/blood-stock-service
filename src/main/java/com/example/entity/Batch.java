@@ -1,8 +1,5 @@
-package com.example.model;
+package com.example.entity;
 
-import com.example.entity.BatchBlood;
-import com.example.entity.Company;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;

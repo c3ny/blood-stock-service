@@ -1,6 +1,6 @@
-package com.example.controler;
+package com.example.controller;
 
-import com.example.model.CompanyDTO;
+import com.example.dto.CompanyDTO;
 import com.example.service.CompanyService;
 import org.springframework.web.bind.annotation.*;
 
