@@ -1,7 +1,7 @@
 package com.example.service;
 
 import com.example.entity.Company;
-import com.example.view.CompanyDTO;
+import com.example.dto.response.CompanyDTO;
 import com.example.repository.CompanyRepository;
 import com.example.mapper.CompanyMapper;
 import org.springframework.stereotype.Service;

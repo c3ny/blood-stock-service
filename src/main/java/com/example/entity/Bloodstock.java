@@ -1,6 +1,6 @@
 package com.example.entity;
 
-import com.example.view.dto.BloodstockDTO;
+import com.example.dto.response.BloodstockDTO;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;

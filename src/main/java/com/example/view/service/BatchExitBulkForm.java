@@ -1,7 +1,7 @@
 package com.example.view.service;
 
 import com.example.dto.request.BatchExitBulkRequestDTO;
-import com.example.view.dto.BatchResponseDTO;
+import com.example.dto.response.BatchResponseDTO;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
