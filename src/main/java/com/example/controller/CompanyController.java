@@ -1,6 +1,6 @@
 package com.example.controller;
 
-import com.example.dto.CompanyDTO;
+import com.example.view.CompanyDTO;
 import com.example.service.CompanyService;
 import org.springframework.web.bind.annotation.*;
 

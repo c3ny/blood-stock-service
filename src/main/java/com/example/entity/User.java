@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "\"user\"")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,19 +23,36 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "person_type", length = 15)
+    private String personType;
+
+    @Column(length = 3)
+    private String uf;
+
+    @Column(nullable = false, length = 255)
     private String password;
 
-    // ---- Spring Security methods ----
+    @Column(length = 100)
+    private String name;
+
+    @Column(length = 200)
+    private String address;
+
+    @Column(length = 50)
+    private String city;
+
+    @Column(length = 10)
+    private String zipcode;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(); // sem roles por enquanto
+        return List.of();
     }
 
     @Override

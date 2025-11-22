@@ -1,10 +1,12 @@
 package com.example.view;
 
-import com.example.dto.BatchExitRequestDTO;
+import com.example.dto.request.BatchExitBulkRequestDTO;
+import com.example.dto.request.BatchExitRequestDTO;
 import com.example.view.dto.BatchResponseDTO;
 import com.example.view.dto.BloodDetailDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -19,6 +21,9 @@ import java.net.URL;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import javafx.util.StringConverter;
 
@@ -375,6 +380,28 @@ public class BatchExitForm extends Stage {
             showStatus("❌ Erro ao carregar lotes: " + e.getMessage(), "error");
         }
     }
+    private String extractErrorMessage(Throwable e) {
+
+        if (e == null) return "Erro desconhecido";
+
+        // Se a exceção tiver causa e mensagem
+        if (e.getCause() != null && e.getCause().getMessage() != null) {
+            return e.getCause().getMessage();
+        }
+
+        // Mensagem direta da exceção
+        if (e.getMessage() != null && !e.getMessage().isBlank()) {
+            return e.getMessage();
+        }
+
+        // Algumas exceções são HTTP errors encapsuladas, então tentamos ler response body
+        if (e instanceof java.util.concurrent.CompletionException ce && ce.getCause() != null) {
+            return extractErrorMessage(ce.getCause());
+        }
+
+        return "Erro desconhecido";
+    }
+
 
     private void processBatchExit() {
         BatchResponseDTO selectedBatch = batchComboBox.getValue();
@@ -398,31 +425,61 @@ public class BatchExitForm extends Stage {
         }
 
         if (quantity > selectedBatch.totalQuantity()) {
-            showStatus(String.format("❌ Quantidade solicitada (%d) é maior que o disponível (%d).",
-                    quantity, selectedBatch.totalQuantity()), "error");
+            showStatus(String.format(
+                    "❌ Quantidade solicitada (%d) é maior que o disponível (%d).",
+                    quantity, selectedBatch.totalQuantity()
+            ), "error");
             return;
         }
 
-        try {
-            BatchExitRequestDTO dto = new BatchExitRequestDTO();
-            dto.setBatchId(selectedBatch.id());
-            dto.setQuantity(quantity);
+        showStatus("⏳ Processando saída...", "warning");
 
-            apiService.batchExit(companyId, dto);
+        // Criar o DTO corretamente no formato esperado pelo backend
+        BatchExitBulkRequestDTO bulkRequest = new BatchExitBulkRequestDTO();
+        bulkRequest.setBatchId(selectedBatch.id());
 
-            showStatus("✅ Saída registrada com sucesso!", "success");
+        // Construir o mapa de quantidades baseado nos tipos sanguíneos do lote
+        Map<String, Integer> quantities = new HashMap<>();
+        selectedBatch.bloodDetails().forEach(detail -> quantities.put(detail.bloodType(), quantity));
 
-            onUpdateCallback.accept(companyId);
-            loadAvailableBatches();
-            quantityField.clear();
-            batchComboBox.getSelectionModel().clearSelection();
-            availableQuantityLabel.setVisible(false);
+        bulkRequest.setQuantities(quantities);
 
-        } catch (Exception e) {
-            showStatus("❌ Erro ao processar saída: " + e.getMessage(), "error");
-        }
+        // Chamar a API e atualizar a interface após sucesso
+        apiService.batchExitBulk(companyId, bulkRequest)
+                .thenRun(() -> Platform.runLater(() -> {
+                    showStatus("✅ Saída registrada com sucesso!", "success");
+
+                    // 🔥 Atualiza imediatamente o estoque antes de atualizar a UI do lote
+                    onUpdateCallback.accept(companyId);
+
+                    loadAvailableBatches();
+
+                    quantityField.clear();
+                    batchComboBox.getSelectionModel().clearSelection();
+                    availableQuantityLabel.setVisible(false);
+                }))
+
+                .exceptionally(e -> {
+                    String errorMessage = extractErrorMessage(e);
+                    Platform.runLater(() ->
+                            showStatus("❌ Erro ao processar saída: " + errorMessage, "error")
+                    );
+                    return null;
+                });
+
+
     }
 
+
+
+
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
     private void showStatus(String message, String type) {
         statusLabel.setText(message);
         statusLabel.getStyleClass().clear();
@@ -435,11 +492,4 @@ public class BatchExitForm extends Stage {
         fade.play();
     }
 
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

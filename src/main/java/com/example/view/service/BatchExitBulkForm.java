@@ -1,9 +1,10 @@
 package com.example.view.service;
 
-import com.example.dto.BatchExitBulkRequestDTO;
+import com.example.dto.request.BatchExitBulkRequestDTO;
 import com.example.view.dto.BatchResponseDTO;
 
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -340,10 +341,23 @@ public class BatchExitBulkForm extends Stage {
             dto.setBatchId(batch.id());
             dto.setQuantities(quantities);
 
-            api.batchExitBulk(companyId, dto);
+            api.batchExitBulk(companyId, dto)
+                    .thenCompose(v -> api.fetchBloodstockByCompany(companyId)) // espera backend atualizar
+                    .thenAccept(updated -> Platform.runLater(() -> {
+                        showStatus("✅ Saída registrada com sucesso!", "success");
 
-            showStatus("✅ Saída registrada com sucesso!", "success");
-            refreshCallback.run();
+                        refreshCallback.run(); // agora roda depois do retorno real da API
+
+                        new Thread(() -> {
+                            try { Thread.sleep(1200); } catch (InterruptedException ignored) {}
+                            Platform.runLater(this::close);
+                        }).start();
+                    }))
+                    .exceptionally(e -> {
+                        Platform.runLater(() -> showStatus("❌ Erro: " + e.getMessage(), "error"));
+                        return null;
+                    });
+
 
             // Aguardar um pouco antes de fechar
             new Thread(() -> {

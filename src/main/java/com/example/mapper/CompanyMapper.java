@@ -1,7 +1,7 @@
 package com.example.mapper;
 
 import com.example.entity.Company;
-import com.example.dto.CompanyDTO;
+import com.example.view.CompanyDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

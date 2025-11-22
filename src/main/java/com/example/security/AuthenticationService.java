@@ -1,8 +1,8 @@
 package com.example.security;
 
-import com.example.dto.LoginRequestDTO;
-import com.example.dto.LoginResponseDTO;
-import com.example.dto.RegisterRequestDTO;
+import com.example.dto.request.LoginRequestDTO;
+import com.example.dto.response.LoginResponseDTO;
+import com.example.dto.request.RegisterRequestDTO;
 import com.example.entity.User;
 import com.example.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,15 +23,23 @@ public class AuthenticationService {
 
     public LoginResponseDTO register(RegisterRequestDTO request) {
 
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmail(request.getEmail());
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already in use.");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already in use.");
+        }
+
+        User user = User.builder()
+                .username(request.getUsername()) // 👈 agora cadastra corretamente
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .build();
 
         userRepository.save(user);
 
-        String token = jwtService.generateToken(user);
-        return new LoginResponseDTO(token);
+        return new LoginResponseDTO(jwtService.generateToken(user));
     }
 
     public LoginResponseDTO login(LoginRequestDTO request) {

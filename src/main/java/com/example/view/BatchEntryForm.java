@@ -1,8 +1,9 @@
 package com.example.view;
 
-import com.example.dto.BatchEntryRequestDTO;
+import com.example.dto.request.BatchEntryRequestDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -189,6 +190,8 @@ public class BatchEntryForm extends Stage {
         return buttonBox;
     }
 
+
+
     private void clearAllFields() {
         batchCodeField.clear();
         quantityFields.values().forEach(TextField::clear);
@@ -209,9 +212,7 @@ public class BatchEntryForm extends Stage {
             String text = quantityFields.get(type).getText().trim();
             int quantity = text.isEmpty() ? 0 : Integer.parseInt(text);
             quantities.put(type, quantity);
-            if (quantity > 0) {
-                hasValidEntry = true;
-            }
+            if (quantity > 0) hasValidEntry = true;
         }
 
         if (!hasValidEntry) {
@@ -223,20 +224,35 @@ public class BatchEntryForm extends Stage {
         requestDTO.setBatchCode(batchCode);
         requestDTO.setBloodQuantities(quantities);
 
-        try {
-            apiService.batchEntry(companyId, requestDTO);
-            showStatus("✅ Entrada de lote registrada com sucesso!", "success");
+        apiService.batchEntry(companyId, requestDTO)
+                .thenRunAsync(() -> Platform.runLater(() -> {
+                    showStatus("Entrada registrada com sucesso!", "success");
+                    onUpdateCallback.accept(companyId);
+                    quantityFields.values().forEach(TextField::clear);
+                    batchCodeField.clear();
+                }))
+                .exceptionally(e -> {
+                    Platform.runLater(() -> showStatus("Erro ao registrar entrada.", "error"));
+                    e.printStackTrace();
+                    return null;
+                });
 
-            // Notificar a tela principal
-            onUpdateCallback.accept(companyId);
 
-            // Limpar campos após sucesso
-            clearAllFields();
-
-        } catch (Exception ex) {
-            showStatus("❌ Erro ao registrar: " + ex.getMessage(), "error");
-        }
     }
+    private String extractErrorMessage(Throwable e) {
+        if (e.getMessage() != null) {
+            return e.getMessage();
+        }
+
+        if (e.getCause() != null && e.getCause().getMessage() != null) {
+            return e.getCause().getMessage();
+        }
+
+        return "Erro desconhecido";
+    }
+
+
+
 
     private void showStatus(String message, String type) {
         statusLabel.setText(message);

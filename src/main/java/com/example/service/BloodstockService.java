@@ -1,7 +1,7 @@
 package com.example.service;
 
-import com.example.dto.BatchEntryRequestDTO;
-import com.example.dto.BatchExitBulkRequestDTO;
+import com.example.dto.request.BatchEntryRequestDTO;
+import com.example.dto.request.BatchExitBulkRequestDTO;
 import com.example.entity.*;
 import com.example.exception.InsufficientStockException;
 import com.example.repository.*;
@@ -89,7 +89,8 @@ public class BloodstockService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        Batch batch = batchRepository.findByBatchCodeAndCompany_Id(requestDTO.getBatchCode(), companyId)
+        Batch temp = batchRepository.findByBatchCodeAndCompany_Id(requestDTO.getBatchCode(), companyId)
+
                 .orElseGet(() -> {
                     Batch newBatch = new Batch();
                     newBatch.setCompany(company);
@@ -97,6 +98,10 @@ public class BloodstockService {
                     newBatch.setEntryDate(LocalDate.now());
                     return newBatch;
                 });
+
+        // 💾 garante que o batch existe no banco antes de adicionar itens
+        final Batch batch = batchRepository.save(temp);
+
 
         requestDTO.getBloodQuantities().forEach((bloodType, quantity) -> {
             if (quantity > 0) {
@@ -109,9 +114,7 @@ public class BloodstockService {
                                 () -> batch.addBloodDetail(new BatchBlood(batch, bloodType, quantity))
                         );
 
-
-
-                // Atualiza estoque geral
+                // Atualiza estoque
                 Bloodstock stock = stockRepository.findByCompanyIdAndBloodType(companyId, bloodType)
                         .orElseGet(() -> {
                             Bloodstock newStock = new Bloodstock();
@@ -121,15 +124,16 @@ public class BloodstockService {
                             return newStock;
                         });
 
-                int newQty = stock.getQuantity() + quantity;
+                int oldQty = stock.getQuantity();
+                int newQty = oldQty + quantity;
+
                 stock.setQuantity(newQty);
                 stockRepository.save(stock);
 
-                // Salvar histórico
                 BloodstockMovement history = new BloodstockMovement();
                 history.setBloodstock(stock);
                 history.setMovement(quantity);
-                history.setQuantityBefore(stock.getQuantity());
+                history.setQuantityBefore(oldQty);
                 history.setQuantityAfter(newQty);
                 history.setActionBy("admin");
                 history.setNotes("Entrada em lote: " + requestDTO.getBatchCode());
@@ -142,6 +146,7 @@ public class BloodstockService {
     }
 
 
+
     // -----------------------
     // BULK EXIT
     // -----------------------
@@ -151,28 +156,61 @@ public class BloodstockService {
         Batch batch = batchRepository.findById(dto.getBatchId())
                 .orElseThrow(() -> new RuntimeException("Lote não encontrado"));
 
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+
         dto.getQuantities().forEach((bloodType, qtyToRemove) -> {
 
+            if (qtyToRemove <= 0) return;
+
+            // 1 - Atualiza o lote
             BatchBlood entry = batch.getBloodDetails().stream()
                     .filter(b -> b.getBloodType().equals(bloodType))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Tipo sanguíneo inexistente no lote"));
 
             if (entry.getQuantity() < qtyToRemove)
-                throw new RuntimeException("Quantidade insuficiente no lote");
+                throw new RuntimeException("Quantidade insuficiente no lote (" + bloodType + ")");
 
-            entry.setQuantity(entry.getQuantity() - qtyToRemove);
+            int oldBatchQty = entry.getQuantity();
+            entry.setQuantity(oldBatchQty - qtyToRemove);
 
-            // UPDATE GENERAL STOCK
+            // 2 - Atualiza o estoque geral
             Bloodstock stock = stockRepository.findByCompanyIdAndBloodType(companyId, bloodType)
-                    .orElseThrow(() -> new RuntimeException("Estoque geral não encontrado"));
+                    .orElseGet(() -> {
+                        Bloodstock newStock = new Bloodstock();
+                        newStock.setCompany(company);
+                        newStock.setBloodType(bloodType);
+                        newStock.setQuantity(0);
+                        return newStock;
+                    });
 
-            stock.setQuantity(stock.getQuantity() - qtyToRemove);
+            int oldStockQty = stock.getQuantity();
+            int newStockQty = oldStockQty - qtyToRemove;
+
+            if (newStockQty < 0)
+                throw new RuntimeException("Estoque geral negativo — ajuste inválido!");
+
+            stock.setQuantity(newStockQty);
             stockRepository.save(stock);
+
+            // 3 - Registrar histórico do movimento
+            BloodstockMovement history = new BloodstockMovement();
+            history.setBloodstock(stock);
+            history.setMovement(qtyToRemove * -1);
+            history.setQuantityBefore(oldStockQty);
+            history.setQuantityAfter(newStockQty);
+            history.setActionBy("admin");
+            history.setNotes("Saída por lote: " + batch.getBatchCode());
+            history.setActionDate(LocalDateTime.now());
+
+            historyRepository.save(history);
         });
 
         return batchRepository.save(batch);
     }
+
+
 
 
     public List<Batch> getAvailableBatches(UUID companyId) {
