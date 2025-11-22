@@ -1,7 +1,7 @@
 package com.example.service;
 
-import com.example.dto.LoginRequest;
-import com.example.dto.LoginResponse;
+import com.example.dto.request.LoginRequest;
+import com.example.dto.response.LoginResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.OutputStream;
@@ -29,7 +29,7 @@ public class AuthService {
         }
 
         if (connection.getResponseCode() == 200) {
-            LoginResponse response = mapper.readValue(connection.getInputStream(), LoginResponse.class);
+            LoginResponseDTO response = mapper.readValue(connection.getInputStream(), LoginResponseDTO.class);
             this.token = response.getToken();
             return token;
         } else {

@@ -2,8 +2,8 @@ package com.example.view;
 
 import com.example.entity.Bloodstock;
 import com.example.entity.BloodstockMovement;
-import com.example.dto.CompanyDTO;
 import com.example.view.controller.BloodstockViewController;
+import com.example.view.dto.BloodstockDTO;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -40,7 +40,7 @@ public class BloodstockFormRefactored extends Application {
 
     private Stage primaryStage;
 
-    private TableView<Bloodstock> tableView;
+    private TableView<BloodstockDTO> tableView;
 
     // refs para os cards
     private final Map<String, ProgressBar> bloodBars = new HashMap<>();
@@ -88,7 +88,7 @@ public class BloodstockFormRefactored extends Application {
         });
 
         // Sempre que a lista observável de estoque mudar, atualiza os 8 cards
-        controller.getBloodstockList().addListener((ListChangeListener<Bloodstock>) change -> {
+        controller.getBloodstockList().addListener((ListChangeListener<BloodstockDTO>) change -> {
             Platform.runLater(this::refreshBloodCards);
             // A TableView já está ligada a controller.getBloodstockList()
             // então a tabela atualiza sozinha.
@@ -289,8 +289,9 @@ public class BloodstockFormRefactored extends Application {
                         primaryStage,
                         controller.getApiService(),
                         selectedCompany.getId(),
-                        this::loadStockForCompany
-                ).show();} else {
+                        (id) -> refreshAll(selectedCompany.getId())
+                ).show();
+            } else {
                 showError("Selecione uma empresa para realizar a entrada por lote.");
             }
         });
@@ -313,7 +314,8 @@ public class BloodstockFormRefactored extends Application {
                         primaryStage,
                         controller.getApiService(),
                         selectedCompany.getId(),
-                        () -> loadStockForCompany(selectedCompany.getId())
+                        () -> refreshAll(selectedCompany.getId())
+
                 ).show();
             } else {
                 showError("Selecione uma empresa para realizar a saída por lote.");
@@ -344,11 +346,11 @@ public class BloodstockFormRefactored extends Application {
     private void setupTableView() {
         tableView.setItems(controller.getBloodstockList());
 
-        TableColumn<Bloodstock, String> typeCol = new TableColumn<>("Tipo");
+        TableColumn<BloodstockDTO, String> typeCol = new TableColumn<>("Tipo");
         typeCol.setCellValueFactory(new PropertyValueFactory<>("bloodType"));
         typeCol.setPrefWidth(120);
 
-        TableColumn<Bloodstock, Integer> qtyCol = new TableColumn<>("Quantidade");
+        TableColumn<BloodstockDTO, Integer> qtyCol = new TableColumn<>("Quantidade");
         qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         qtyCol.setPrefWidth(140);
         qtyCol.setCellFactory(col -> new TableCell<>() {
@@ -367,7 +369,7 @@ public class BloodstockFormRefactored extends Application {
             }
         });
 
-        TableColumn<Bloodstock, LocalDate> dateCol = new TableColumn<>("Atualizado em");
+        TableColumn<BloodstockDTO, LocalDate> dateCol = new TableColumn<>("Atualizado em");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
         dateCol.setPrefWidth(160);
         dateCol.setCellFactory(col -> new TableCell<>() {
@@ -379,7 +381,7 @@ public class BloodstockFormRefactored extends Application {
             }
         });
 
-        TableColumn<Bloodstock, Integer> statusCol = new TableColumn<>("Status");
+        TableColumn<BloodstockDTO, Integer> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         statusCol.setPrefWidth(140);
         statusCol.setCellFactory(col -> new TableCell<>() {
@@ -470,7 +472,7 @@ public class BloodstockFormRefactored extends Application {
         html.append("<table><tr><th>Tipo</th><th>Quantidade</th><th>Status</th></tr>");
 
         int total = 0, critical = 0;
-        for (Bloodstock s : controller.getBloodstockList()) {
+        for (BloodstockDTO s : controller.getBloodstockList()) {
             String statusClass, statusText;
             if (s.getQuantity() < 10) {
                 statusClass = "status-critical";
@@ -586,6 +588,24 @@ public class BloodstockFormRefactored extends Application {
         alert.showAndWait();
     }
 
+    private void refreshAll(UUID companyId) {
+        // Atualiza estoque
+        loadStockForCompany(companyId);
+
+        // Atualiza lista de lotes para saída
+        try {
+            controller.getApiService().getAvailableBatches(companyId);
+            System.out.println("🔄 Lotes atualizados!");
+        } catch (Exception e) {
+            System.out.println("❌ Erro ao atualizar lotes: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+
 
 
     /* ==================== PRÉ-VISUALIZAÇÃO HTML ==================== */
@@ -652,10 +672,17 @@ public class BloodstockFormRefactored extends Application {
         controller.loadCompanies(this::showError);
     }
 
-    private void loadStockForCompany(java.util.UUID id) {
-        controller.loadBloodstockByCompany(id, this::showError);
-        refreshBloodCards();
+    private void loadStockForCompany(UUID id) {
+        controller.loadBloodstockByCompany(id, error -> {
+            System.out.println("❌ Erro ao carregar estoque: " + error);
+            showError(error);
+        }, () -> Platform.runLater(() -> {
+            refreshBloodCards();
+            tableView.refresh();
+        }));
     }
+
+
 
     private void startAutoRefresh() {
         Timeline auto = new Timeline(new KeyFrame(Duration.seconds(20), e -> refreshBloodCards()));
@@ -665,7 +692,7 @@ public class BloodstockFormRefactored extends Application {
 
     private void refreshBloodCards() {
         if (controller.getBloodstockList().isEmpty()) return;
-        for (Bloodstock s : controller.getBloodstockList()) updateBloodCard(s.getBloodType(), s.getQuantity());
+        for (BloodstockDTO s : controller.getBloodstockList()) updateBloodCard(s.getBloodType(), s.getQuantity());
         // atualiza tabela automaticamente (lista é observável)
     }
 
@@ -727,12 +754,26 @@ public class BloodstockFormRefactored extends Application {
 
         try {
             int qty = Integer.parseInt(qtyText.trim());
-            controller.processMovement(selectedMovementType, company.getId(), type, qty, this::showSuccess, this::showError);
+
+            controller.processMovement(
+                    selectedMovementType,
+                    company.getId(),
+                    type,
+                    qty,
+                    msg -> {
+                        showSuccess(msg);
+                        refreshAll(company.getId());  //🚀 Agora os cards e lotes recarregam!
+                    },
+                    this::showError
+            );
+
             quantityField.clear();
+
         } catch (NumberFormatException e) {
             showError("Quantidade inválida!");
         }
     }
+
 
     private void showError(String msg) {
         Platform.runLater(() -> {

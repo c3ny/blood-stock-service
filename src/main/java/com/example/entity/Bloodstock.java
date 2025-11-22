@@ -1,5 +1,6 @@
 package com.example.entity;
 
+import com.example.view.dto.BloodstockDTO;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -11,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 )
 @Entity
 @Table(name = "stock")
-public class Bloodstock {
+public class Bloodstock extends BloodstockDTO {
 
     @Id
     @GeneratedValue(generator = "UUID")

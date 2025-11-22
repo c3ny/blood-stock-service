@@ -1,14 +1,16 @@
 package com.example.controller;
 
-import com.example.dto.BatchEntryRequestDTO;
-import com.example.dto.BatchExitBulkRequestDTO;
-import com.example.dto.BloodstockMovementRequestDTO;
-import com.example.dto.CompanyDTO;
+import com.example.dto.request.BatchEntryRequestDTO;
+import com.example.dto.request.BatchExitBulkRequestDTO;
+import com.example.dto.request.BloodstockMovementRequestDTO;
+import com.example.view.CompanyDTO;
 import com.example.entity.Batch;
 import com.example.entity.BloodstockMovement;
 import com.example.repository.BloodstockMovementRepository;
 import com.example.service.BloodstockService;
 import com.example.service.CompanyService;
+import com.example.view.dto.BatchResponseDTO;
+import com.example.view.dto.BloodDetailDTO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,9 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/stock")
@@ -60,11 +60,17 @@ public class BloodstockController {
     ) {
         try {
             bloodstockService.processBulkBatchExit(companyId, requestDTO);
-            return ResponseEntity.ok("Saída registrada com sucesso.");
+
+            // 🔥 Buscar o estoque atualizado
+            List<Bloodstock> updatedStock = bloodstockService.findByCompany(companyId);
+
+            return ResponseEntity.ok(updatedStock);
+
         } catch (Exception e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
     }
+
 
 
     // Criar bloodstock sem company
@@ -86,11 +92,28 @@ public class BloodstockController {
         return bloodstockService.updateQuantity(id, quantity, currentUser);
     }
 
-    // Listar todas as companies
-    @GetMapping("/company")
-    public List<CompanyDTO> listCompanies() {
-        return companyService.listAll();
+
+    private BatchResponseDTO mapToDto(Batch batch) {
+
+        List<BloodDetailDTO> details = batch.getBloodDetails()
+                .stream()
+                .map(d -> new BloodDetailDTO(
+                        d.getId(),            // UUID
+                        d.getBloodType(),     // String
+                        d.getQuantity()       // Integer
+                ))
+                .toList();
+
+        return new BatchResponseDTO(
+                batch.getId(),
+                batch.getBatchCode(),
+                batch.getEntryDate(),
+                details
+        );
     }
+
+
+
 
     // Listar estoque da empresa
     @GetMapping("/company/{companyId}")
@@ -161,12 +184,16 @@ public class BloodstockController {
         writer.close();
     }
 
-    // Listar lotes disponíveis por empresa
     @GetMapping("/company/{companyId}/batches")
-    public ResponseEntity<List<Batch>> getAvailableBatches(@PathVariable UUID companyId) {
+    public ResponseEntity<List<BatchResponseDTO>> getAvailableBatches(@PathVariable UUID companyId) {
         try {
-            List<Batch> batches = bloodstockService.getAvailableBatches(companyId);
-            return ResponseEntity.ok(batches);
+            List<BatchResponseDTO> response = bloodstockService.getAvailableBatches(companyId)
+                    .stream()
+                    .map(this::mapToDto)
+                    .toList();
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             log.error("Erro ao listar lotes disponíveis para a empresa {}: {}", companyId, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
@@ -174,21 +201,25 @@ public class BloodstockController {
     }
 
 
+
+
     // Entrada de estoque por lote
     @PostMapping("/company/{companyId}/batch-entry")
-    public ResponseEntity<List<Batch>> batchEntry(
+    public ResponseEntity<List<BatchResponseDTO>> batchEntry(
             @PathVariable UUID companyId,
             @Valid @RequestBody BatchEntryRequestDTO requestDTO
     ) {
         try {
             Batch newBatch = bloodstockService.processBatchEntry(companyId, requestDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(List.of(newBatch));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(List.of(mapToDto(newBatch)));
 
         } catch (Exception e) {
             log.error("Erro ao processar entrada de lote para a empresa {}: {}", companyId, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
+
 
     // ✅ Novo endpoint correto para relatório do histórico por empresa
     @GetMapping("/history/report/{companyId}")

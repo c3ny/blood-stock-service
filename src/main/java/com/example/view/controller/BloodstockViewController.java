@@ -1,8 +1,8 @@
 package com.example.view.controller;
 
-import com.example.entity.Bloodstock;
+import com.example.view.dto.BloodstockDTO;
 import com.example.entity.BloodstockMovement;
-import com.example.dto.CompanyDTO;
+import com.example.view.CompanyDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -21,7 +21,7 @@ public class BloodstockViewController {
 
     private final BloodstockApiService apiService;
     private final ObservableList<CompanyDTO> companies;
-    private final ObservableList<Bloodstock> bloodstockList;
+    private final ObservableList<BloodstockDTO> bloodstockList;
 
     public BloodstockViewController() {
         this.apiService = new BloodstockApiService();
@@ -35,7 +35,7 @@ public class BloodstockViewController {
         return companies;
     }
 
-    public ObservableList<Bloodstock> getBloodstockList() {
+    public ObservableList<BloodstockDTO> getBloodstockList() {
         return bloodstockList;
     }
 
@@ -50,6 +50,14 @@ public class BloodstockViewController {
                     Platform.runLater(() -> {
                         companies.clear();
                         companies.addAll(companyList);
+
+                        // Seleciona automaticamente a primeira empresa quando carregado
+                        if (!companies.isEmpty()) {
+                            CompanyDTO first = companies.get(0);
+
+                            // Carrega estoque imediatamente
+                            loadBloodstockByCompany(first.getId(), onError);
+                        }
                     });
                 })
                 .exceptionally(e -> {
@@ -58,31 +66,44 @@ public class BloodstockViewController {
                 });
     }
 
+
     /**
      * Carrega o estoque de uma empresa específica de forma assíncrona.
      */
+    // ==================== Load Stock ====================
+
     public void loadBloodstockByCompany(UUID companyId, Consumer<String> onError) {
+        loadBloodstockByCompany(companyId, onError, null);
+    }
+
+
+    public void loadBloodstockByCompany(UUID companyId, Consumer<String> onError, Runnable onSuccess) {
+
         apiService.fetchBloodstockByCompany(companyId)
-                .thenAccept(stocks -> {
-                    Platform.runLater(() -> {
-                        bloodstockList.clear();
-                        bloodstockList.addAll(stocks);
-                    });
-                })
+
+                .thenAccept(stock -> Platform.runLater(() -> {
+                    bloodstockList.setAll(stock);
+
+                    if (onSuccess != null) {
+                        onSuccess.run(); // <- Atualiza UI se existir callback
+                    }
+                }))
                 .exceptionally(e -> {
-                    Platform.runLater(() -> onError.accept("Erro ao carregar estoque: " + e.getMessage()));
+                    if (onError != null) {
+                        onError.accept(e.getMessage());
+                    }
                     return null;
                 });
     }
+
+
 
     /**
      * Busca o histórico de movimentações de uma empresa.
      */
     public void loadHistoryByCompany(UUID companyId, Consumer<List<BloodstockMovement>> onSuccess, Consumer<String> onError) {
         apiService.fetchHistoryByCompany(companyId)
-                .thenAccept(history -> {
-                    Platform.runLater(() -> onSuccess.accept(history));
-                })
+                .thenAccept(history -> Platform.runLater(() -> onSuccess.accept(history)))
                 .exceptionally(e -> {
                     Platform.runLater(() -> onError.accept("Erro ao carregar histórico: " + e.getMessage()));
                     return null;
@@ -92,14 +113,16 @@ public class BloodstockViewController {
     /**
      * Cria ou atualiza um item de estoque.
      */
-    public void saveBloodstock(Bloodstock bloodstock, UUID companyId,
-                               Consumer<Bloodstock> onSuccess, Consumer<String> onError) {
+    public void saveBloodstock(BloodstockDTO bloodstock, UUID companyId,
+                               Consumer<BloodstockDTO> onSuccess, Consumer<String> onError) {
+
         apiService.saveBloodstock(bloodstock, companyId)
                 .thenAccept(savedBloodstock -> {
                     Platform.runLater(() -> {
                         if (savedBloodstock != null) {
                             onSuccess.accept(savedBloodstock);
-                            // Recarregar a lista
+
+                            // Recarregar lista
                             loadBloodstockByCompany(companyId, onError);
                         } else {
                             onError.accept("Erro ao salvar estoque");
@@ -116,13 +139,13 @@ public class BloodstockViewController {
      * Atualiza a quantidade de um item de estoque.
      */
     public void updateQuantity(UUID bloodstockId, int quantity, UUID companyId,
-                               Consumer<Bloodstock> onSuccess, Consumer<String> onError) {
+                               Consumer<BloodstockDTO> onSuccess, Consumer<String> onError) {
+
         apiService.updateQuantity(bloodstockId, quantity)
                 .thenAccept(updatedBloodstock -> {
                     Platform.runLater(() -> {
                         if (updatedBloodstock != null) {
                             onSuccess.accept(updatedBloodstock);
-                            // Recarregar a lista
                             loadBloodstockByCompany(companyId, onError);
                         } else {
                             onError.accept("Erro ao atualizar quantidade");
@@ -141,7 +164,6 @@ public class BloodstockViewController {
     public void processMovement(String movementType, UUID companyId, String bloodType,
                                 int quantity, Consumer<String> onSuccess, Consumer<String> onError) {
 
-        // Validações
         if (movementType == null || movementType.isEmpty()) {
             onError.accept("Selecione o tipo de movimentação (Entrada ou Saída)");
             return;
@@ -157,23 +179,19 @@ public class BloodstockViewController {
             return;
         }
 
-        // Ajustar quantidade para saída (negativo)
         int adjustedQuantity = movementType.equals("Saída") ? -quantity : quantity;
 
-        // Buscar o bloodstock existente para esse tipo sanguíneo
-        Bloodstock existingBloodstock = bloodstockList.stream()
+        BloodstockDTO existingBloodstock = bloodstockList.stream()
                 .filter(b -> b.getBloodType().equals(bloodType))
                 .findFirst()
                 .orElse(null);
 
         if (existingBloodstock != null) {
-            // Atualizar quantidade existente
             updateQuantity(existingBloodstock.getId(), adjustedQuantity, companyId,
                     updated -> onSuccess.accept("Movimentação realizada com sucesso!"),
                     onError);
         } else {
-            // Criar novo bloodstock
-            Bloodstock newBloodstock = new Bloodstock();
+            BloodstockDTO newBloodstock = new BloodstockDTO();
             newBloodstock.setBloodType(bloodType);
             newBloodstock.setQuantity(adjustedQuantity);
 
@@ -183,9 +201,8 @@ public class BloodstockViewController {
         }
     }
 
-    /**
-     * Exibe um alerta de erro.
-     */
+    // ==================== Helpers ====================
+
     public static void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Erro");
@@ -194,21 +211,15 @@ public class BloodstockViewController {
         alert.showAndWait();
     }
 
-    /**
-     * Exibe um alerta de sucesso.
-     */
-    public BloodstockApiService getApiService() {
-        return apiService;
-    }
-
-    /**
-     * Exibe um alerta de sucesso.
-     */
     public static void showSuccess(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Sucesso");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public BloodstockApiService getApiService() {
+        return apiService;
     }
 }

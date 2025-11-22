@@ -1,6 +1,6 @@
 package com.example;
 
-import com.example.view.BloodstockForm;
+import com.example.view.BloodstockFormRefactored;
 import com.example.view.SplashScreen;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -39,7 +39,7 @@ public class MainLauncher extends Application {
 
                         // Cria e configura a janela principal
                         Stage mainStage = new Stage();
-                        BloodstockForm form = new BloodstockForm();
+                        BloodstockFormRefactored form = new BloodstockFormRefactored();
                         form.start(mainStage);
 
                         // 🔹 Ajuste visual: centraliza e define tamanho fixo
