@@ -2,12 +2,12 @@ package com.example.view.service;
 
 import com.example.entity.Bloodstock;
 import com.example.entity.BloodstockMovement;
-import com.example.view.CompanyDTO;
-import com.example.view.dto.BatchResponseDTO;
+import com.example.dto.response.CompanyDTO;
+import com.example.dto.response.BatchResponseDTO;
 import com.example.dto.request.BatchEntryRequestDTO;
 import com.example.dto.request.BatchExitRequestDTO;
 import com.example.dto.request.BatchExitBulkRequestDTO;
-import com.example.view.dto.BloodstockDTO;
+import com.example.dto.response.BloodstockDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.net.URI;
@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;

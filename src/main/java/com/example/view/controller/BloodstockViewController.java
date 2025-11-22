@@ -1,8 +1,8 @@
 package com.example.view.controller;
 
-import com.example.view.dto.BloodstockDTO;
+import com.example.dto.response.BloodstockDTO;
 import com.example.entity.BloodstockMovement;
-import com.example.view.CompanyDTO;
+import com.example.dto.response.CompanyDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;

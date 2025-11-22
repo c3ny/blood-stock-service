@@ -1,9 +1,9 @@
 package com.example.view;
 
-import com.example.entity.Bloodstock;
+import com.example.dto.response.CompanyDTO;
 import com.example.entity.BloodstockMovement;
 import com.example.view.controller.BloodstockViewController;
-import com.example.view.dto.BloodstockDTO;
+import com.example.dto.response.BloodstockDTO;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;

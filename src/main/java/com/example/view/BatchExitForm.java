@@ -1,9 +1,8 @@
 package com.example.view;
 
 import com.example.dto.request.BatchExitBulkRequestDTO;
-import com.example.dto.request.BatchExitRequestDTO;
-import com.example.view.dto.BatchResponseDTO;
-import com.example.view.dto.BloodDetailDTO;
+import com.example.dto.response.BatchResponseDTO;
+import com.example.dto.response.BloodDetailDTO;
 import com.example.view.service.BloodstockApiService;
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
