@@ -1,7 +1,5 @@
+.git
 .gradle
 build
-out
 .idea
 *.iml
-*.log
-bin

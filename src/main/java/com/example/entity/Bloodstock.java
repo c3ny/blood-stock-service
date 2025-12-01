@@ -5,6 +5,14 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
+import com.example.entity.BloodType;
+
+
 
 @NamedQuery(
         name = "Bloodstock.findAllByCompanyId",
@@ -12,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 )
 @Entity
 @Table(name = "stock")
-public class Bloodstock extends BloodstockDTO {
+public class Bloodstock {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -23,9 +31,12 @@ public class Bloodstock extends BloodstockDTO {
     @Column(updatable = false, nullable = false)
     private UUID id;
 
+    @NotNull(message = "Tipo sanguíneo é obrigatório")
+    @Enumerated(EnumType.STRING)
     @Column(name = "blood_type")
     @JsonProperty("blood_type")
-    private String bloodType;
+    private BloodType bloodType;
+
 
     @Column(name = "update_date")
     @JsonProperty("update_date")
@@ -48,8 +59,9 @@ public class Bloodstock extends BloodstockDTO {
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
-    public String getBloodType() { return bloodType; }
-    public void setBloodType(String bloodType) { this.bloodType = bloodType; }
+
+    public BloodType getBloodType() { return bloodType; }
+    public void setBloodType(BloodType bloodType) { this.bloodType = bloodType; }
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
