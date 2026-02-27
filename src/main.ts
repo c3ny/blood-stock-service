@@ -1,10 +1,59 @@
+import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+
+interface RateLimitState {
+  count: number;
+  resetAt: number;
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const rateLimitMap = new Map<string, RateLimitState>();
+  const rateLimitWindowMs = 60_000;
+  const rateLimitMaxRequests = 120;
+
+  app.use((req: any, res: any, next: () => void) => {
+    const traceId = req.headers['x-trace-id'] || randomUUID();
+    req.traceId = traceId;
+    res.setHeader('x-trace-id', traceId);
+
+    if (req.path.startsWith('/api-docs')) {
+      return next();
+    }
+
+    const key = req.ip || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const current = rateLimitMap.get(key);
+
+    if (!current || now > current.resetAt) {
+      rateLimitMap.set(key, { count: 1, resetAt: now + rateLimitWindowMs });
+      return next();
+    }
+
+    current.count += 1;
+    rateLimitMap.set(key, current);
+
+    if (current.count > rateLimitMaxRequests) {
+      return res.status(429).json({
+        statusCode: 429,
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Try again later.',
+        details: {
+          windowMs: rateLimitWindowMs,
+          maxRequests: rateLimitMaxRequests,
+          retryAfterMs: Math.max(current.resetAt - now, 0),
+        },
+        traceId,
+      });
+    }
+
+    return next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -13,6 +62,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.setGlobalPrefix('api/v1');
 
   // Configuração do Swagger/OpenAPI
   const config = new DocumentBuilder()
@@ -37,7 +89,7 @@ async function bootstrap() {
       '- Docker + Docker Compose\n' +
       '- Class Validator para validação de DTOs\n',
     )
-    .setVersion('1.0.0')
+    .setVersion('1.1.0')
     .setContact(
       'Blood Stock Team',
       'https://github.com/bloodstock/blood-stock-service',
@@ -58,7 +110,7 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addServer('http://localhost:3000', 'Desenvolvimento Local')
+    .addServer('http://localhost:3000/api/v1', 'Desenvolvimento Local')
     .addServer('http://localhost:3000/api/v1', 'Docker Local')
     .addServer('https://staging.bloodstock.com/api/v1', 'Ambiente de Staging')
     .addServer('https://api.bloodstock.com/api/v1', 'Ambiente de Produção')
@@ -76,7 +128,7 @@ async function bootstrap() {
   });
 
   await app.listen(3000, () => {
-    console.log('Application is running on: http://localhost:3000');
+    console.log('Application is running on: http://localhost:3000/api/v1');
     console.log('Swagger documentation available at: http://localhost:3000/api-docs');
   });
 }

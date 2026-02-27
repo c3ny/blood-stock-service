@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ListStocksQuery, ListStocksResult, StockReadModel, StockRepositoryPort } from '@application/stock/ports';
-import { StockItem } from '@domain';
+import {
+  AtomicAdjustStockCommand,
+  AtomicAdjustStockResult,
+  ListStocksQuery,
+  ListStocksResult,
+  StockReadModel,
+  StockRepositoryPort,
+} from '@application/stock/ports';
+import { StockNotFoundError } from '@application/stock/errors';
+import { StockItem, Quantity } from '@domain';
 import { PrismaService } from '../prisma/prisma.service';
 import { StockPrismaMapper } from './stock-prisma.mapper';
 
@@ -80,6 +88,64 @@ export class StockPrismaRepository implements StockRepositoryPort {
     };
   }
 
+  async adjustAtomically(command: AtomicAdjustStockCommand): Promise<AtomicAdjustStockResult> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "stock" WHERE id = ${command.stockId} FOR UPDATE`;
+
+      const raw = await tx.stock.findUnique({
+        where: { id: command.stockId },
+      });
+
+      if (!raw) {
+        throw new StockNotFoundError(command.stockId);
+      }
+
+      const stock = this.mapper.toDomain(raw);
+      const quantityBefore = this.getQuantityByBloodType(stock).getValue();
+      stock.adjustBy(command.movement);
+      const quantityAfter = this.getQuantityByBloodType(stock).getValue();
+
+      await tx.stock.update({
+        where: { id: command.stockId },
+        data: {
+          quantityA: stock.getQuantityA().getValue(),
+          quantityB: stock.getQuantityB().getValue(),
+          quantityAB: stock.getQuantityAB().getValue(),
+          quantityO: stock.getQuantityO().getValue(),
+          updatedAt: command.timestamp,
+        },
+      });
+
+      await tx.stockMovement.create({
+        data: {
+          id: command.movementId,
+          stockId: command.stockId,
+          quantityBefore,
+          movement: command.movement,
+          quantityAfter,
+          actionBy: command.actionBy,
+          notes: command.notes,
+          createdAt: command.timestamp,
+        },
+      });
+
+      return {
+        stockId: stock.getId().getValue(),
+        companyId: stock.getCompanyId().getValue(),
+        bloodType: stock.getBloodType().getValue(),
+        quantityABefore: raw.quantityA,
+        quantityBBefore: raw.quantityB,
+        quantityABBefore: raw.quantityAB,
+        quantityOBefore: raw.quantityO,
+        quantityAAfter: stock.getQuantityA().getValue(),
+        quantityBAfter: stock.getQuantityB().getValue(),
+        quantityABAfter: stock.getQuantityAB().getValue(),
+        quantityOAfter: stock.getQuantityO().getValue(),
+        timestamp: command.timestamp,
+      };
+    });
+  }
+
   async save(stock: StockItem): Promise<void> {
     const raw = this.mapper.toPersistence(stock);
 
@@ -102,5 +168,14 @@ export class StockPrismaRepository implements StockRepositoryPort {
 
   private bloodTypeToPrisma(domainType: string): string {
     return domainType.replace('+', '_POS').replace('-', '_NEG');
+  }
+
+  private getQuantityByBloodType(stock: StockItem): Quantity {
+    const type = stock.getBloodType().getValue();
+    if (type === 'A+' || type === 'A-') return stock.getQuantityA();
+    if (type === 'B+' || type === 'B-') return stock.getQuantityB();
+    if (type === 'AB+' || type === 'AB-') return stock.getQuantityAB();
+    if (type === 'O+' || type === 'O-') return stock.getQuantityO();
+    throw new Error(`Unknown blood type: ${type}`);
   }
 }

@@ -1,10 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PrismaService } from '@adapters/out/persistence/prisma/prisma.service';
 import { HealthResponseDTO } from './dto/health-response.dto';
 
 @ApiTags('Sistema')
 @Controller('health')
 export class HealthController {
+  constructor(private readonly prisma: PrismaService) {}
+
   @Get()
   @ApiOperation({
     summary: 'Health Check',
@@ -45,15 +48,27 @@ export class HealthController {
   async checkHealth(): Promise<HealthResponseDTO> {
     const uptime = process.uptime();
 
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: Math.floor(uptime),
-      version: '1.0.0',
-      services: {
-        database: 'up',
-        api: 'up',
-      },
-    };
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+
+      return {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(uptime),
+        version: '1.0.0',
+        services: {
+          database: 'up',
+          api: 'up',
+        },
+      };
+    } catch (error) {
+      throw new ServiceUnavailableException({
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Database connection failed',
+        details: {
+          reason: error instanceof Error ? error.message : 'unknown error',
+        },
+      });
+    }
   }
 }

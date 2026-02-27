@@ -11,13 +11,13 @@ const common_1 = require("@nestjs/common");
 const _domain_1 = require("../../../../domain");
 let StockPrismaMapper = class StockPrismaMapper {
     toDomain(raw) {
-        return _domain_1.StockItem.create(new _domain_1.EntityId(raw.id), new _domain_1.EntityId(raw.companyId), _domain_1.BloodType.fromString(raw.bloodType), new _domain_1.Quantity(raw.quantityA), new _domain_1.Quantity(raw.quantityB), new _domain_1.Quantity(raw.quantityAB), new _domain_1.Quantity(raw.quantityO));
+        return _domain_1.StockItem.create(new _domain_1.EntityId(raw.id), new _domain_1.EntityId(raw.companyId), _domain_1.BloodType.fromString(this.prismaToBloodType(raw.bloodType)), new _domain_1.Quantity(raw.quantityA), new _domain_1.Quantity(raw.quantityB), new _domain_1.Quantity(raw.quantityAB), new _domain_1.Quantity(raw.quantityO));
     }
     toPersistence(domain) {
         return {
             id: domain.getId().getValue(),
             companyId: domain.getCompanyId().getValue(),
-            bloodType: domain.getBloodType().getValue(),
+            bloodType: this.bloodTypeToPrisma(domain.getBloodType().getValue()),
             quantityA: domain.getQuantityA().getValue(),
             quantityB: domain.getQuantityB().getValue(),
             quantityAB: domain.getQuantityAB().getValue(),
@@ -25,6 +25,12 @@ let StockPrismaMapper = class StockPrismaMapper {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+    }
+    prismaToBloodType(prismaType) {
+        return prismaType.replace('_POS', '+').replace('_NEG', '-');
+    }
+    bloodTypeToPrisma(domainType) {
+        return domainType.replace('+', '_POS').replace('-', '_NEG');
     }
 };
 exports.StockPrismaMapper = StockPrismaMapper;

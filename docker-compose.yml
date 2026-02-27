@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database Service
   db:
@@ -44,7 +42,7 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
-    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js"
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"
 
 volumes:
   postgres_data:

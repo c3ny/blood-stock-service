@@ -30,6 +30,8 @@ model Stock {
   updatedAt   DateTime        @updatedAt @map("updated_at")
   movements   StockMovement[]
 
+  @@index([companyId, bloodType])
+  @@index([createdAt])
   @@map("stock")
 }
 
@@ -46,6 +48,8 @@ model StockMovement {
   stock Stock @relation(fields: [stockId], references: [id])
 
   @@index([stockId])
+  @@index([stockId, createdAt])
+  @@index([createdAt])
   @@map("bloodstock_movement")
 }
 

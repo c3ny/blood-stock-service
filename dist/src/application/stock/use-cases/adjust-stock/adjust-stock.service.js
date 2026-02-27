@@ -14,70 +14,38 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdjustStockService = void 0;
 const common_1 = require("@nestjs/common");
-const ports_1 = require("../../ports");
-const _domain_1 = require("../../../../domain");
-const errors_1 = require("../../../../domain/errors");
+const adjust_stock_result_1 = require("./adjust-stock.result");
+const stock_repository_port_1 = require("../../ports/out/stock-repository.port");
+const id_generator_port_1 = require("../../ports/out/id-generator.port");
+const date_provider_port_1 = require("../../ports/out/date-provider.port");
 let AdjustStockService = class AdjustStockService {
     stockRepository;
-    movementRepository;
     idGenerator;
     dateProvider;
-    constructor(stockRepository, movementRepository, idGenerator, dateProvider) {
+    constructor(stockRepository, idGenerator, dateProvider) {
         this.stockRepository = stockRepository;
-        this.movementRepository = movementRepository;
         this.idGenerator = idGenerator;
         this.dateProvider = dateProvider;
     }
     async execute(command) {
-        const stock = await this.stockRepository.findById(command.stockId);
-        if (!stock) {
-            throw new Error(`Stock not found with ID: ${command.stockId}`);
-        }
-        const quantityBefore = this.getQuantityByBloodType(stock);
-        try {
-            stock.adjustBy(command.movement);
-        }
-        catch (error) {
-            if (error instanceof errors_1.InsufficientStockError) {
-                throw error;
-            }
-            throw error;
-        }
-        const quantityAfter = this.getQuantityByBloodType(stock);
-        const movement = new _domain_1.StockMovement({
-            id: new _domain_1.EntityId(this.idGenerator.generate()),
-            stockId: stock.getId(),
-            quantityBefore,
+        const timestamp = this.dateProvider.now();
+        const adjustment = await this.stockRepository.adjustAtomically({
+            stockId: command.stockId,
+            movementId: this.idGenerator.generate(),
             movement: command.movement,
-            quantityAfter,
             actionBy: command.actionBy,
             notes: command.notes,
-            createdAt: this.dateProvider.now(),
+            timestamp,
         });
-        await this.movementRepository.save(movement);
-        await this.stockRepository.save(stock);
-        return new ports_1.AdjustStockResult(stock.getId().getValue(), stock.getCompanyId().getValue(), stock.getBloodType().getValue(), quantityBefore.getValue(), quantityBefore.getValue(), quantityBefore.getValue(), quantityBefore.getValue(), quantityAfter.getValue(), quantityAfter.getValue(), quantityAfter.getValue(), quantityAfter.getValue(), this.dateProvider.now());
-    }
-    getQuantityByBloodType(stock) {
-        const type = stock.getBloodType().getValue();
-        if (type === 'A+' || type === 'A-')
-            return stock.getQuantityA();
-        if (type === 'B+' || type === 'B-')
-            return stock.getQuantityB();
-        if (type === 'AB+' || type === 'AB-')
-            return stock.getQuantityAB();
-        if (type === 'O+' || type === 'O-')
-            return stock.getQuantityO();
-        throw new Error(`Unknown blood type: ${type}`);
+        return new adjust_stock_result_1.AdjustStockResult(adjustment.stockId, adjustment.companyId, adjustment.bloodType, adjustment.quantityABefore, adjustment.quantityBBefore, adjustment.quantityABBefore, adjustment.quantityOBefore, adjustment.quantityAAfter, adjustment.quantityBAfter, adjustment.quantityABAfter, adjustment.quantityOAfter, adjustment.timestamp);
     }
 };
 exports.AdjustStockService = AdjustStockService;
 exports.AdjustStockService = AdjustStockService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, common_1.Inject)(ports_1.STOCK_REPOSITORY_PORT)),
-    __param(1, (0, common_1.Inject)(ports_1.STOCK_MOVEMENT_REPOSITORY_PORT)),
-    __param(2, (0, common_1.Inject)(ports_1.ID_GENERATOR_PORT)),
-    __param(3, (0, common_1.Inject)(ports_1.DATE_PROVIDER_PORT)),
-    __metadata("design:paramtypes", [Object, Object, Object, Object])
+    __param(0, (0, common_1.Inject)(stock_repository_port_1.STOCK_REPOSITORY_PORT)),
+    __param(1, (0, common_1.Inject)(id_generator_port_1.ID_GENERATOR_PORT)),
+    __param(2, (0, common_1.Inject)(date_provider_port_1.DATE_PROVIDER_PORT)),
+    __metadata("design:paramtypes", [Object, Object, Object])
 ], AdjustStockService);
 //# sourceMappingURL=adjust-stock.service.js.map

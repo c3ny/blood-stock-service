@@ -41,8 +41,14 @@ COPY package*.json ./
 # Copy Prisma schema (required for runtime)
 COPY prisma ./prisma
 
+# Ensure runtime files belong to non-root user
+RUN chown -R node:node /app
+
 # Set environment to production
 ENV NODE_ENV=production
+
+# Run container as non-root
+USER node
 
 # Expose application port
 EXPOSE 3000

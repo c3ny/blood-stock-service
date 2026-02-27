@@ -1,6 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ADJUST_STOCK_USE_CASE } from '@application/stock/ports';
-import { AdjustStockService } from '@application/stock/use-cases';
+import {
+  ADJUST_STOCK_USE_CASE,
+  GET_STOCK_BY_ID_USE_CASE,
+  GET_STOCK_MOVEMENTS_USE_CASE,
+  LIST_STOCKS_USE_CASE,
+} from '@application/stock/ports';
+import {
+  AdjustStockService,
+  GetStockByIdService,
+  GetStockMovementsService,
+  ListStocksService,
+} from '@application/stock/use-cases';
 import { PrismaService } from '../out/persistence/prisma/prisma.service';
 import { StockPrismaRepository } from '../out/persistence/stock/stock-prisma.repository';
 import { StockPrismaMapper } from '../out/persistence/stock/stock-prisma.mapper';
@@ -28,23 +38,32 @@ import {
       provide: ADJUST_STOCK_USE_CASE,
       useFactory: (
         stockRepository: StockPrismaRepository,
-        movementRepository: StockMovementPrismaRepository,
         idGenerator: UuidIdGeneratorAdapter,
         dateProvider: SystemDateProviderAdapter,
       ) => {
         return new AdjustStockService(
           stockRepository,
-          movementRepository,
           idGenerator,
           dateProvider,
         );
       },
       inject: [
         StockPrismaRepository,
-        StockMovementPrismaRepository,
         UuidIdGeneratorAdapter,
         SystemDateProviderAdapter,
       ],
+    },
+    {
+      provide: LIST_STOCKS_USE_CASE,
+      useClass: ListStocksService,
+    },
+    {
+      provide: GET_STOCK_BY_ID_USE_CASE,
+      useClass: GetStockByIdService,
+    },
+    {
+      provide: GET_STOCK_MOVEMENTS_USE_CASE,
+      useClass: GetStockMovementsService,
     },
     {
       provide: STOCK_REPOSITORY_PORT,
@@ -63,6 +82,12 @@ import {
       useClass: SystemDateProviderAdapter,
     },
   ],
-  exports: [ADJUST_STOCK_USE_CASE],
+  exports: [
+    PrismaService,
+    ADJUST_STOCK_USE_CASE,
+    LIST_STOCKS_USE_CASE,
+    GET_STOCK_BY_ID_USE_CASE,
+    GET_STOCK_MOVEMENTS_USE_CASE,
+  ],
 })
 export class AdjustStockModule {}

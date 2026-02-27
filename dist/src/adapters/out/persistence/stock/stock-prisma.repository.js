@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StockPrismaRepository = void 0;
 const common_1 = require("@nestjs/common");
+const errors_1 = require("../../../../application/stock/errors");
 const prisma_service_1 = require("../prisma/prisma.service");
 const stock_prisma_mapper_1 = require("./stock-prisma.mapper");
 let StockPrismaRepository = class StockPrismaRepository {
@@ -28,6 +29,109 @@ let StockPrismaRepository = class StockPrismaRepository {
             return null;
         return this.mapper.toDomain(raw);
     }
+    async findReadById(id) {
+        const raw = await this.prisma.stock.findUnique({
+            where: { id },
+        });
+        if (!raw)
+            return null;
+        return {
+            id: raw.id,
+            companyId: raw.companyId,
+            bloodType: this.prismaToBloodType(raw.bloodType),
+            quantityA: raw.quantityA,
+            quantityB: raw.quantityB,
+            quantityAB: raw.quantityAB,
+            quantityO: raw.quantityO,
+            createdAt: raw.createdAt,
+            updatedAt: raw.updatedAt,
+        };
+    }
+    async findMany(query) {
+        const where = {};
+        if (query.companyId) {
+            where.companyId = query.companyId;
+        }
+        if (query.bloodType) {
+            where.bloodType = this.bloodTypeToPrisma(query.bloodType);
+        }
+        const [items, total] = await Promise.all([
+            this.prisma.stock.findMany({
+                where,
+                skip: (query.page - 1) * query.limit,
+                take: query.limit,
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.stock.count({ where }),
+        ]);
+        return {
+            items: items.map((raw) => ({
+                id: raw.id,
+                companyId: raw.companyId,
+                bloodType: this.prismaToBloodType(raw.bloodType),
+                quantityA: raw.quantityA,
+                quantityB: raw.quantityB,
+                quantityAB: raw.quantityAB,
+                quantityO: raw.quantityO,
+                createdAt: raw.createdAt,
+                updatedAt: raw.updatedAt,
+            })),
+            total,
+            page: query.page,
+            limit: query.limit,
+        };
+    }
+    async adjustAtomically(command) {
+        return this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw `SELECT id FROM "stock" WHERE id = ${command.stockId} FOR UPDATE`;
+            const raw = await tx.stock.findUnique({
+                where: { id: command.stockId },
+            });
+            if (!raw) {
+                throw new errors_1.StockNotFoundError(command.stockId);
+            }
+            const stock = this.mapper.toDomain(raw);
+            const quantityBefore = this.getQuantityByBloodType(stock).getValue();
+            stock.adjustBy(command.movement);
+            const quantityAfter = this.getQuantityByBloodType(stock).getValue();
+            await tx.stock.update({
+                where: { id: command.stockId },
+                data: {
+                    quantityA: stock.getQuantityA().getValue(),
+                    quantityB: stock.getQuantityB().getValue(),
+                    quantityAB: stock.getQuantityAB().getValue(),
+                    quantityO: stock.getQuantityO().getValue(),
+                    updatedAt: command.timestamp,
+                },
+            });
+            await tx.stockMovement.create({
+                data: {
+                    id: command.movementId,
+                    stockId: command.stockId,
+                    quantityBefore,
+                    movement: command.movement,
+                    quantityAfter,
+                    actionBy: command.actionBy,
+                    notes: command.notes,
+                    createdAt: command.timestamp,
+                },
+            });
+            return {
+                stockId: stock.getId().getValue(),
+                companyId: stock.getCompanyId().getValue(),
+                bloodType: stock.getBloodType().getValue(),
+                quantityABefore: raw.quantityA,
+                quantityBBefore: raw.quantityB,
+                quantityABBefore: raw.quantityAB,
+                quantityOBefore: raw.quantityO,
+                quantityAAfter: stock.getQuantityA().getValue(),
+                quantityBAfter: stock.getQuantityB().getValue(),
+                quantityABAfter: stock.getQuantityAB().getValue(),
+                quantityOAfter: stock.getQuantityO().getValue(),
+                timestamp: command.timestamp,
+            };
+        });
+    }
     async save(stock) {
         const raw = this.mapper.toPersistence(stock);
         await this.prisma.stock.upsert({
@@ -41,6 +145,24 @@ let StockPrismaRepository = class StockPrismaRepository {
             },
             create: raw,
         });
+    }
+    prismaToBloodType(prismaType) {
+        return prismaType.replace('_POS', '+').replace('_NEG', '-');
+    }
+    bloodTypeToPrisma(domainType) {
+        return domainType.replace('+', '_POS').replace('-', '_NEG');
+    }
+    getQuantityByBloodType(stock) {
+        const type = stock.getBloodType().getValue();
+        if (type === 'A+' || type === 'A-')
+            return stock.getQuantityA();
+        if (type === 'B+' || type === 'B-')
+            return stock.getQuantityB();
+        if (type === 'AB+' || type === 'AB-')
+            return stock.getQuantityAB();
+        if (type === 'O+' || type === 'O-')
+            return stock.getQuantityO();
+        throw new Error(`Unknown blood type: ${type}`);
     }
 };
 exports.StockPrismaRepository = StockPrismaRepository;

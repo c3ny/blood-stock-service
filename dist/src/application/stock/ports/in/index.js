@@ -15,4 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./adjust-stock.use-case"), exports);
+__exportStar(require("./list-stocks.use-case"), exports);
+__exportStar(require("./get-stock-by-id.use-case"), exports);
+__exportStar(require("./get-stock-movements.use-case"), exports);
 //# sourceMappingURL=index.js.map

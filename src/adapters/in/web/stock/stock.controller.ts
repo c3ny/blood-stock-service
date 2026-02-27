@@ -1,26 +1,29 @@
-import { Controller, Patch, Get, Param, Body, Query, Inject, BadRequestException, NotFoundException, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Patch, Get, Param, Body, Query, Inject, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import {
   ADJUST_STOCK_USE_CASE,
   AdjustStockUseCase,
-  STOCK_REPOSITORY_PORT,
+  GET_STOCK_BY_ID_USE_CASE,
+  GetStockByIdUseCase,
+  GET_STOCK_MOVEMENTS_USE_CASE,
+  GetStockMovementsUseCase,
+  LIST_STOCKS_USE_CASE,
+  ListStocksUseCase,
   StockReadModel,
-  StockRepositoryPort,
-  STOCK_MOVEMENT_REPOSITORY_PORT,
   StockMovementReadModel,
-  StockMovementRepositoryPort,
 } from '@application/stock/ports';
 import { AdjustStockCommand } from '@application/stock/use-cases';
-import { InsufficientStockError } from '@domain/errors';
 import { 
   AdjustStockRequestDTO, 
   AdjustStockResponseDTO,
+  StockListQueryDTO,
+  StockMovementsQueryDTO,
   StockItemDTO,
   StockMovementDTO,
   StockListResponseDTO,
   StockMovementsResponseDTO,
 } from './dto';
-import { ErrorResponseDTO, ValidationErrorResponseDTO, InsufficientStockErrorDTO } from '../common/error-response.dto';
+import { ErrorResponseDTO, ValidationErrorResponseDTO } from '../common/error-response.dto';
 
 @ApiTags('Estoque de Sangue')
 @Controller('stocks')
@@ -28,10 +31,12 @@ export class StockController {
   constructor(
     @Inject(ADJUST_STOCK_USE_CASE)
     private readonly adjustStockUseCase: AdjustStockUseCase,
-    @Inject(STOCK_REPOSITORY_PORT)
-    private readonly stockRepository: StockRepositoryPort,
-    @Inject(STOCK_MOVEMENT_REPOSITORY_PORT)
-    private readonly stockMovementRepository: StockMovementRepositoryPort,
+    @Inject(LIST_STOCKS_USE_CASE)
+    private readonly listStocksUseCase: ListStocksUseCase,
+    @Inject(GET_STOCK_BY_ID_USE_CASE)
+    private readonly getStockByIdUseCase: GetStockByIdUseCase,
+    @Inject(GET_STOCK_MOVEMENTS_USE_CASE)
+    private readonly getStockMovementsUseCase: GetStockMovementsUseCase,
   ) {}
 
   @Get()
@@ -97,27 +102,13 @@ export class StockController {
     type: ValidationErrorResponseDTO,
   })
   async listStocks(
-    @Query('companyId') companyId?: string,
-    @Query('bloodType') bloodType?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: StockListQueryDTO,
   ): Promise<StockListResponseDTO> {
-    const parsedPage = page !== undefined ? Number(page) : 1;
-    const parsedLimit = limit !== undefined ? Number(limit) : 10;
-
-    if (!Number.isInteger(parsedPage) || parsedPage < 1) {
-      throw new BadRequestException('Query param "page" must be an integer greater than 0');
-    }
-
-    if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
-      throw new BadRequestException('Query param "limit" must be an integer between 1 and 100');
-    }
-
-    const result = await this.stockRepository.findMany({
-      companyId,
-      bloodType,
-      page: parsedPage,
-      limit: parsedLimit,
+    const result = await this.listStocksUseCase.execute({
+      companyId: query.companyId,
+      bloodType: query.bloodType,
+      page: query.page ?? 1,
+      limit: query.limit ?? 10,
     });
 
     return {
@@ -167,12 +158,7 @@ export class StockController {
     },
   })
   async getStockById(@Param('stockId') stockId: string): Promise<StockItemDTO> {
-    const stock = await this.stockRepository.findReadById(stockId);
-    
-    if (!stock) {
-      throw new NotFoundException(`Stock with ID ${stockId} not found`);
-    }
-
+    const stock = await this.getStockByIdUseCase.execute(stockId);
     return this.mapStockReadToDTO(stock);
   }
 
@@ -222,20 +208,9 @@ export class StockController {
   })
   async getStockMovements(
     @Param('stockId') stockId: string,
-    @Query('limit') limit?: number,
+    @Query() query: StockMovementsQueryDTO,
   ): Promise<StockMovementsResponseDTO> {
-    const parsedLimit = limit !== undefined ? Number(limit) : 50;
-
-    if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 200) {
-      throw new BadRequestException('Query param "limit" must be an integer between 1 and 200');
-    }
-
-    const stock = await this.stockRepository.findReadById(stockId);
-    if (!stock) {
-      throw new NotFoundException(`Stock with ID ${stockId} not found`);
-    }
-
-    const movements = await this.stockMovementRepository.findByStockId(stockId, parsedLimit);
+    const movements = await this.getStockMovementsUseCase.execute(stockId, query.limit ?? 50);
 
     return {
       items: movements.items.map((movement) => this.mapMovementReadToDTO(movement)),
@@ -331,36 +306,23 @@ export class StockController {
     @Param('stockId') stockId: string,
     @Body() dto: AdjustStockRequestDTO,
   ): Promise<AdjustStockResponseDTO> {
-    try {
-      const command = new AdjustStockCommand(stockId, dto.movement, dto.actionBy, dto.notes);
-      const result = await this.adjustStockUseCase.execute(command);
+    const command = new AdjustStockCommand(stockId, dto.movement, dto.actionBy, dto.notes);
+    const result = await this.adjustStockUseCase.execute(command);
 
-      return {
-        stockId: result.stockId,
-        companyId: result.companyId,
-        bloodType: result.bloodType,
-        quantityABefore: result.quantityABefore,
-        quantityBBefore: result.quantityBBefore,
-        quantityABBefore: result.quantityABBefore,
-        quantityOBefore: result.quantityOBefore,
-        quantityAAfter: result.quantityAAfter,
-        quantityBAfter: result.quantityBAfter,
-        quantityABAfter: result.quantityABAfter,
-        quantityOAfter: result.quantityOAfter,
-        timestamp: result.timestamp,
-      };
-    } catch (error) {
-      if (error instanceof InsufficientStockError) {
-        throw new BadRequestException(error.message);
-      }
-      if (error instanceof Error && error.message.includes('Stock not found')) {
-        throw new NotFoundException(error.message);
-      }
-      if (error instanceof Error) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    return {
+      stockId: result.stockId,
+      companyId: result.companyId,
+      bloodType: result.bloodType,
+      quantityABefore: result.quantityABefore,
+      quantityBBefore: result.quantityBBefore,
+      quantityABBefore: result.quantityABBefore,
+      quantityOBefore: result.quantityOBefore,
+      quantityAAfter: result.quantityAAfter,
+      quantityBAfter: result.quantityBAfter,
+      quantityABAfter: result.quantityABAfter,
+      quantityOAfter: result.quantityOAfter,
+      timestamp: result.timestamp,
+    };
   }
 
   private mapStockReadToDTO(stock: StockReadModel): StockItemDTO {

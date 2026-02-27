@@ -33,15 +33,26 @@ exports.AdjustStockModule = AdjustStockModule = __decorate([
             system_date_provider_adapter_1.SystemDateProviderAdapter,
             {
                 provide: ports_1.ADJUST_STOCK_USE_CASE,
-                useFactory: (stockRepository, movementRepository, idGenerator, dateProvider) => {
-                    return new use_cases_1.AdjustStockService(stockRepository, movementRepository, idGenerator, dateProvider);
+                useFactory: (stockRepository, idGenerator, dateProvider) => {
+                    return new use_cases_1.AdjustStockService(stockRepository, idGenerator, dateProvider);
                 },
                 inject: [
                     stock_prisma_repository_1.StockPrismaRepository,
-                    stock_movement_prisma_repository_1.StockMovementPrismaRepository,
                     uuid_id_generator_adapter_1.UuidIdGeneratorAdapter,
                     system_date_provider_adapter_1.SystemDateProviderAdapter,
                 ],
+            },
+            {
+                provide: ports_1.LIST_STOCKS_USE_CASE,
+                useClass: use_cases_1.ListStocksService,
+            },
+            {
+                provide: ports_1.GET_STOCK_BY_ID_USE_CASE,
+                useClass: use_cases_1.GetStockByIdService,
+            },
+            {
+                provide: ports_1.GET_STOCK_MOVEMENTS_USE_CASE,
+                useClass: use_cases_1.GetStockMovementsService,
             },
             {
                 provide: ports_2.STOCK_REPOSITORY_PORT,
@@ -60,7 +71,13 @@ exports.AdjustStockModule = AdjustStockModule = __decorate([
                 useClass: system_date_provider_adapter_1.SystemDateProviderAdapter,
             },
         ],
-        exports: [ports_1.ADJUST_STOCK_USE_CASE],
+        exports: [
+            prisma_service_1.PrismaService,
+            ports_1.ADJUST_STOCK_USE_CASE,
+            ports_1.LIST_STOCKS_USE_CASE,
+            ports_1.GET_STOCK_BY_ID_USE_CASE,
+            ports_1.GET_STOCK_MOVEMENTS_USE_CASE,
+        ],
     })
 ], AdjustStockModule);
 //# sourceMappingURL=adjust-stock.module.js.map

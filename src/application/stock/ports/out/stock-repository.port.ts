@@ -26,10 +26,35 @@ export interface ListStocksResult {
   limit: number;
 }
 
+export interface AtomicAdjustStockCommand {
+  stockId: string;
+  movementId: string;
+  movement: number;
+  actionBy: string;
+  notes: string;
+  timestamp: Date;
+}
+
+export interface AtomicAdjustStockResult {
+  stockId: string;
+  companyId: string;
+  bloodType: string;
+  quantityABefore: number;
+  quantityBBefore: number;
+  quantityABBefore: number;
+  quantityOBefore: number;
+  quantityAAfter: number;
+  quantityBAfter: number;
+  quantityABAfter: number;
+  quantityOAfter: number;
+  timestamp: Date;
+}
+
 export interface StockRepositoryPort {
   findById(id: string): Promise<StockItem | null>;
   findReadById(id: string): Promise<StockReadModel | null>;
   findMany(query: ListStocksQuery): Promise<ListStocksResult>;
+  adjustAtomically(command: AtomicAdjustStockCommand): Promise<AtomicAdjustStockResult>;
   save(stock: StockItem): Promise<void>;
 }
 
