@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StockMovementRepositoryPort } from '@application/stock/ports';
+import { StockMovementListResult, StockMovementRepositoryPort } from '@application/stock/ports';
 import { StockMovement } from '@domain/entities';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -19,5 +19,32 @@ export class StockMovementPrismaRepository implements StockMovementRepositoryPor
         notes: movement.getNotes(),
       },
     });
+  }
+
+  async findByStockId(stockId: string, limit?: number): Promise<StockMovementListResult> {
+    const [items, total] = await Promise.all([
+      this.prisma.stockMovement.findMany({
+        where: { stockId },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.stockMovement.count({
+        where: { stockId },
+      }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        stockId: item.stockId,
+        movement: item.movement,
+        quantityBefore: item.quantityBefore,
+        quantityAfter: item.quantityAfter,
+        actionBy: item.actionBy,
+        notes: item.notes,
+        createdAt: item.createdAt,
+      })),
+      total,
+    };
   }
 }

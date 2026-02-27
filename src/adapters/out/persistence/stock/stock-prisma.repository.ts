@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StockRepositoryPort } from '@application/stock/ports';
+import { ListStocksQuery, ListStocksResult, StockReadModel, StockRepositoryPort } from '@application/stock/ports';
 import { StockItem } from '@domain';
 import { PrismaService } from '../prisma/prisma.service';
 import { StockPrismaMapper } from './stock-prisma.mapper';
@@ -21,6 +21,65 @@ export class StockPrismaRepository implements StockRepositoryPort {
     return this.mapper.toDomain(raw);
   }
 
+  async findReadById(id: string): Promise<StockReadModel | null> {
+    const raw = await this.prisma.stock.findUnique({
+      where: { id },
+    });
+
+    if (!raw) return null;
+
+    return {
+      id: raw.id,
+      companyId: raw.companyId,
+      bloodType: this.prismaToBloodType(raw.bloodType),
+      quantityA: raw.quantityA,
+      quantityB: raw.quantityB,
+      quantityAB: raw.quantityAB,
+      quantityO: raw.quantityO,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    };
+  }
+
+  async findMany(query: ListStocksQuery): Promise<ListStocksResult> {
+    const where: any = {};
+
+    if (query.companyId) {
+      where.companyId = query.companyId;
+    }
+
+    if (query.bloodType) {
+      where.bloodType = this.bloodTypeToPrisma(query.bloodType);
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.stock.findMany({
+        where,
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.stock.count({ where }),
+    ]);
+
+    return {
+      items: items.map((raw) => ({
+        id: raw.id,
+        companyId: raw.companyId,
+        bloodType: this.prismaToBloodType(raw.bloodType),
+        quantityA: raw.quantityA,
+        quantityB: raw.quantityB,
+        quantityAB: raw.quantityAB,
+        quantityO: raw.quantityO,
+        createdAt: raw.createdAt,
+        updatedAt: raw.updatedAt,
+      })),
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
+  }
+
   async save(stock: StockItem): Promise<void> {
     const raw = this.mapper.toPersistence(stock);
 
@@ -35,5 +94,13 @@ export class StockPrismaRepository implements StockRepositoryPort {
       },
       create: raw,
     });
+  }
+
+  private prismaToBloodType(prismaType: string): string {
+    return prismaType.replace('_POS', '+').replace('_NEG', '-');
+  }
+
+  private bloodTypeToPrisma(domainType: string): string {
+    return domainType.replace('+', '_POS').replace('-', '_NEG');
   }
 }
