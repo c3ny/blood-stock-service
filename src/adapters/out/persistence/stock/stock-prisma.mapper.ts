@@ -8,7 +8,7 @@ export class StockPrismaMapper {
     return StockItem.create(
       new EntityId(raw.id),
       new EntityId(raw.companyId),
-      BloodType.fromString(raw.bloodType),
+      BloodType.fromString(this.prismaToBloodType(raw.bloodType)),
       new Quantity(raw.quantityA),
       new Quantity(raw.quantityB),
       new Quantity(raw.quantityAB),
@@ -20,7 +20,7 @@ export class StockPrismaMapper {
     return {
       id: domain.getId().getValue(),
       companyId: domain.getCompanyId().getValue(),
-      bloodType: domain.getBloodType().getValue() as any,
+      bloodType: this.bloodTypeToPrisma(domain.getBloodType().getValue()) as any,
       quantityA: domain.getQuantityA().getValue(),
       quantityB: domain.getQuantityB().getValue(),
       quantityAB: domain.getQuantityAB().getValue(),
@@ -28,5 +28,15 @@ export class StockPrismaMapper {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+  }
+
+  private prismaToBloodType(prismaType: string): string {
+    // Convert Prisma enum format (A_POS) to domain format (A+)
+    return prismaType.replace('_POS', '+').replace('_NEG', '-');
+  }
+
+  private bloodTypeToPrisma(domainType: string): string {
+    // Convert domain format (A+) to Prisma enum format (A_POS)
+    return domainType.replace('+', '_POS').replace('-', '_NEG');
   }
 }

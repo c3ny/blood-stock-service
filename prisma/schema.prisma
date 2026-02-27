@@ -48,3 +48,19 @@ model StockMovement {
   @@index([stockId])
   @@map("bloodstock_movement")
 }
+
+model Batch {
+  id            String    @id @db.Uuid
+  companyId     String    @db.Uuid @map("company_id")
+  code          String
+  bloodType     BloodType @map("blood_type")
+  entryQuantity Int       @map("entry_quantity")
+  exitQuantity  Int       @map("exit_quantity")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([bloodType])
+  @@map("batch")
+}

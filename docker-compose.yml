@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: bloodstock-db
+    restart: always
+    ports:
+      - "5433:5432"  # Porta 5433 no host para evitar conflito com PostgreSQL local
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-bloodstock}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bloodstock-app
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_USER: ${DATABASE_USER:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      DATABASE_NAME: ${DATABASE_NAME:-bloodstock}
+      DATABASE_URL: postgresql://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-db}:${DATABASE_PORT:-5432}/${DATABASE_NAME:-bloodstock}
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: bloodstock-network
