@@ -3,6 +3,7 @@ package com.example.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.util.UUID;
+import jakarta.validation.constraints.Pattern;
 
 @Entity
 @Table(name = "company")
@@ -14,17 +15,27 @@ public class Company {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
+    // Antes era @NotBlank — agora opcional
     private String name;
+
+    // Removeu obrigatoriedade, mas mantém validação se preenchido
+    @Pattern(
+            regexp = "\\d{14}",
+            message = "CNPJ inválido — deve conter 14 dígitos"
+    )
     private String cnpj;
+
     private String cnes;
 
-    @Column(name = "institution_name", nullable = false)
+    // Antes era obrigatório — agora opcional
+    @Column(name = "institution_name")
     private String institutionName;
 
     @Column(name = "fk_user_id")
     private UUID fkUserId;
 
-    // Getters e Setters
+    // ---------- Getters e Setters ----------
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
