@@ -1,1 +1,0 @@
-{"version":3,"file":"invalid-batch-operation.error.js","sourceRoot":"","sources":["../../../../src/domain/errors/invalid-batch-operation.error.ts"],"names":[],"mappings":";;;AAAA,MAAa,0BAA2B,SAAQ,KAAK;IACnD,YAAY,OAAe;QACzB,KAAK,CAAC,OAAO,CAAC,CAAC;QACf,IAAI,CAAC,IAAI,GAAG,4BAA4B,CAAC;IAC3C,CAAC;CACF;AALD,gEAKC"}
