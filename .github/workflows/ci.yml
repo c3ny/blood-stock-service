@@ -39,7 +39,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
-        if: ${{ hashFiles('prisma/schema.prisma') != '' || hashFiles('prisma/schema-production.prisma') != '' || hashFiles('prisma/schema-refactored.prisma') != '' }}
+        if: ${{ hashFiles('prisma/schema.prisma') != '' }}
         run: npx prisma generate
 
       - name: Lint
@@ -90,7 +90,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
-        if: ${{ hashFiles('prisma/schema.prisma') != '' || hashFiles('prisma/schema-production.prisma') != '' || hashFiles('prisma/schema-refactored.prisma') != '' }}
+        if: ${{ hashFiles('prisma/schema.prisma') != '' }}
         run: npx prisma generate
 
       - name: Run e2e tests

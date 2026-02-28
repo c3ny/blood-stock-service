@@ -3,6 +3,9 @@
 -- ============================================================
 
 -- STEP 1: Create new V3 Enums
+DROP TYPE IF EXISTS "blood_type_enum" CASCADE;
+CREATE TYPE "blood_type_enum" AS ENUM ('A_POS', 'A_NEG', 'B_POS', 'B_NEG', 'AB_POS', 'AB_NEG', 'O_POS', 'O_NEG');
+
 DROP TYPE IF EXISTS "blood_bag_status_enum" CASCADE;
 CREATE TYPE "blood_bag_status_enum" AS ENUM ('AVAILABLE','RESERVED','USED','EXPIRED','DISCARDED','TRANSFERRED');
 
@@ -15,10 +18,19 @@ CREATE TYPE "user_role_enum" AS ENUM ('ADMIN','MANAGER','TECHNICIAN','DOCTOR','N
 DROP TYPE IF EXISTS "alert_type_enum" CASCADE;
 CREATE TYPE "alert_type_enum" AS ENUM ('LOW_STOCK','EXPIRING_SOON','EXPIRED','CRITICAL_STOCK');
 
--- STEP 2: Backup V2 data
-CREATE TABLE "_v2_stock_backup" AS SELECT * FROM "stock";
-CREATE TABLE "_v2_movement_backup" AS SELECT * FROM "bloodstock_movement";
-CREATE TABLE "_v2_batch_backup" AS SELECT * FROM "batch";
+-- STEP 2: Backup V2 data (conditional - only if tables exist)
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'stock') THEN
+    EXECUTE 'CREATE TABLE "_v2_stock_backup" AS SELECT * FROM "stock"';
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'bloodstock_movement') THEN
+    EXECUTE 'CREATE TABLE "_v2_movement_backup" AS SELECT * FROM "bloodstock_movement"';
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'batch') THEN
+    EXECUTE 'CREATE TABLE "_v2_batch_backup" AS SELECT * FROM "batch"';
+  END IF;
+END $$;
 
 -- STEP 3: Create Company table
 CREATE TABLE "company" (
@@ -60,31 +72,23 @@ INSERT INTO "user" ("company_id", "name", "email", "password", "role")
 SELECT "id", 'System', 'system@local', 'SYS', 'ADMIN' FROM "company" LIMIT 1 
 ON CONFLICT ("email") DO NOTHING;
 
--- STEP 5: Migrate & recreate Batch
-CREATE TABLE "batch_v3" AS
-SELECT 
-  b."id",
-  (SELECT "id" FROM "company" LIMIT 1) AS "company_id",
-  b."code",
-  b."blood_type",
-  b."created_at" AS "received_at",
-  b."created_at" + INTERVAL '30 days' AS "expires_at",
-  NULL::VARCHAR(255) AS "donor_reference",
-  NULL::VARCHAR(255) AS "source_location",
-  NULL::TEXT AS "notes",
-  b."created_at",
-  b."updated_at"
-FROM "_v2_batch_backup" b;
+-- STEP 5: Recreate Batch table with V3 structure
+DROP TABLE IF EXISTS "batch" CASCADE;
 
-ALTER TABLE "batch_v3" ADD PRIMARY KEY ("id");
-ALTER TABLE "batch_v3" ADD CONSTRAINT "batch_v3_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "company"("id") ON DELETE CASCADE;
-ALTER TABLE "batch_v3" ADD CONSTRAINT "batch_v3_unique_code_company" UNIQUE("company_id", "code");
-
-DROP INDEX IF EXISTS "batch_company_id_code_key" CASCADE;
-DROP INDEX IF EXISTS "batch_blood_type_idx" CASCADE;
-DROP INDEX IF EXISTS "batch_company_id_idx" CASCADE;
-DROP TABLE "batch";
-ALTER TABLE "batch_v3" RENAME TO "batch";
+CREATE TABLE "batch" (
+  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "company_id" UUID NOT NULL REFERENCES "company"("id") ON DELETE CASCADE,
+  "code" VARCHAR(100) NOT NULL,
+  "blood_type" "blood_type_enum" NOT NULL,
+  "received_at" TIMESTAMP(3) NOT NULL,
+  "expires_at" TIMESTAMP(3) NOT NULL,
+  "donor_reference" VARCHAR(255),
+  "source_location" VARCHAR(255),
+  "notes" TEXT,
+  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "batch_unique_code_company" UNIQUE("company_id", "code")
+);
 
 CREATE INDEX "batch_company_id_idx" ON "batch"("company_id");
 CREATE INDEX "batch_blood_type_idx" ON "batch"("blood_type");
@@ -96,7 +100,7 @@ CREATE TABLE "blood_bag" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "batch_id" UUID NOT NULL REFERENCES "batch"("id") ON DELETE CASCADE,
   "bag_code" VARCHAR(100) NOT NULL UNIQUE,
-  "blood_type" "BloodType" NOT NULL,
+  "blood_type" "blood_type_enum" NOT NULL,
   "volume" INTEGER DEFAULT 450,
   "status" "blood_bag_status_enum" DEFAULT 'AVAILABLE',
   "expires_at" TIMESTAMP(3) NOT NULL,
@@ -120,19 +124,6 @@ CREATE INDEX "blood_bag_status_idx" ON "blood_bag"("status");
 CREATE INDEX "blood_bag_expires_at_idx" ON "blood_bag"("expires_at");
 CREATE INDEX "blood_bag_status_expires_at_idx" ON "blood_bag"("status", "expires_at");
 
--- Populate blood bags from stock
-INSERT INTO "blood_bag" ("batch_id", "bag_code", "blood_type", "volume", "expires_at", "created_at")
-SELECT
-  b."id",
-  'BAG-' || s."id" || '-' || ROW_NUMBER() OVER (PARTITION BY s."id" ORDER BY s."id")::TEXT,
-  s."blood_type",
-  450,
-  s."created_at" + INTERVAL '30 days',
-  s."created_at"
-FROM "_v2_stock_backup" s
-JOIN "batch" b ON b."blood_type" = s."blood_type" AND b."company_id" = (SELECT "id" FROM "company" LIMIT 1)
-WHERE s."quantity" > 0;
-
 -- STEP 7: Create Movement table
 CREATE TABLE "movement" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -140,7 +131,7 @@ CREATE TABLE "movement" (
   "blood_bag_id" UUID REFERENCES "blood_bag"("id") ON DELETE SET NULL,
   "user_id" UUID NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT,
   "type" "movement_type_enum" NOT NULL,
-  "blood_type" "BloodType" NOT NULL,
+  "blood_type" "blood_type_enum" NOT NULL,
   "quantity" INTEGER DEFAULT 1,
   "origin" VARCHAR(255),
   "destination" VARCHAR(255),
@@ -152,23 +143,11 @@ CREATE INDEX "movement_company_id_idx" ON "movement"("company_id");
 CREATE INDEX "movement_type_idx" ON "movement"("type");
 CREATE INDEX "movement_blood_type_idx" ON "movement"("blood_type");
 
--- Populate movements 
-INSERT INTO "movement" ("company_id", "user_id", "type", "blood_type", "quantity", "notes", "created_at")
-SELECT
-  (SELECT "id" FROM "company" LIMIT 1),
-  (SELECT "id" FROM "user" LIMIT 1),
-  CASE WHEN m."movement" > 0 THEN 'ENTRY_DONATION'::movement_type_enum ELSE 'EXIT_TRANSFUSION'::movement_type_enum END,
-  'A_POS'::"BloodType",
-  ABS(m."movement"),
-  m."notes",
-  m."created_at"
-FROM "_v2_movement_backup" m;
-
 -- STEP 8: Create StockView
 CREATE TABLE "stock_view" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "company_id" UUID NOT NULL REFERENCES "company"("id") ON DELETE CASCADE,
-  "blood_type" "BloodType" NOT NULL,
+  "blood_type" "blood_type_enum" NOT NULL,
   "available_count" INTEGER DEFAULT 0,
   "reserved_count" INTEGER DEFAULT 0,
   "used_count" INTEGER DEFAULT 0,
@@ -182,22 +161,11 @@ CREATE TABLE "stock_view" (
   CONSTRAINT "stock_view_unique_company_blood_type" UNIQUE("company_id", "blood_type")
 );
 
-INSERT INTO "stock_view" ("company_id", "blood_type", "available_count", "total_volume", "available_volume")
-SELECT
-  b."company_id",
-  bb."blood_type",
-  COUNT(*) FILTER (WHERE bb."status" = 'AVAILABLE'),
-  SUM(bb."volume"),
-  SUM(bb."volume") FILTER (WHERE bb."status" = 'AVAILABLE')
-FROM "blood_bag" bb
-JOIN "batch" b ON bb."batch_id" = b."id"
-GROUP BY b."company_id", bb."blood_type";
-
 -- STEP 9: Create StockAlert
 CREATE TABLE "stock_alert" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "company_id" UUID NOT NULL REFERENCES "company"("id") ON DELETE CASCADE,
-  "blood_type" "BloodType" NOT NULL,
+  "blood_type" "blood_type_enum" NOT NULL,
   "alert_type" "alert_type_enum" NOT NULL,
   "severity" VARCHAR(20) NOT NULL,
   "message" TEXT NOT NULL,
@@ -224,6 +192,9 @@ CREATE TABLE "event_log" (
 
 CREATE INDEX "event_log_aggregate_id_idx" ON "event_log"("aggregate_id");
 
--- STEP 11: Drop V2 tables
-DROP TABLE "stock" CASCADE;
-DROP TABLE "bloodstock_movement" CASCADE;
+-- STEP 11: Drop V2 tables and backups (if they exist)
+DROP TABLE IF EXISTS "_v2_batch_backup" CASCADE;
+DROP TABLE IF EXISTS "_v2_movement_backup" CASCADE;
+DROP TABLE IF EXISTS "_v2_stock_backup" CASCADE;
+DROP TABLE IF EXISTS "stock" CASCADE;
+DROP TABLE IF EXISTS "bloodstock_movement" CASCADE;

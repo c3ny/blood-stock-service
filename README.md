@@ -53,13 +53,10 @@ O **Blood Stock Service** é uma API RESTful para gerenciamento de estoque de sa
 
 | Documento | Descrição | Tamanho |
 |-----------|-----------|---------|
-| **[📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md)** | Visão geral visual com comparações e métricas | ~15KB |
-| **[📖 Análise Completa](docs/COMPLETE_SCHEMA_ANALYSIS.md)** | Análise detalhada com 8 problemas identificados + solução | ~100KB |
-| **[🔧 Schema Refatorado](prisma/schema-refactored.prisma)** | Schema Prisma avançado para evolução (V3) | 500 linhas |
-| **[🚀 Guia de Migração](docs/MIGRATION_GUIDE.md)** | 2 estratégias de migração (Reset vs Transform) | ~15KB |
+| **[📘 README de Docs](docs/README.md)** | Visão geral da documentação técnica mantida | ~2KB |
+| **[🔌 API](docs/API.md)** | Referência dos endpoints e contratos | ~10KB |
+| **[🏗️ Arquitetura](docs/reports/ARCHITECTURE.md)** | Desenho arquitetural e decisões técnicas | ~10KB |
 | **[💻 Exemplos de Queries](src/examples/queries-refactored.ts)** | 20+ funções prontas para uso | 700 linhas |
-| **[🧪 Como Testar](docs/reports/HOW_TO_TEST_NEW_SCHEMA.md)** | Guia passo a passo para testar novo schema | ~10KB |
-| **[🧭 Status do Schema](docs/SCHEMA_STATUS.md)** | Alinhamento entre schema ativo e schemas V3 | ~3KB |
 
 ### 🎯 Comparação Rápida
 
@@ -74,24 +71,20 @@ O **Blood Stock Service** é uma API RESTful para gerenciamento de estoque de sa
 ### 🚀 Como Começar
 
 ```bash
-# 1. Aplicar novo schema
-cp prisma/schema-refactored.prisma prisma/schema.prisma
-npx prisma migrate dev --name refactor_blood_stock
+# 1. Aplicar migrations
+npx prisma migrate dev
 
 # 2. Popular com dados de teste
-npx ts-node prisma/seed-refactored.ts
+npx prisma db seed
 
-# 3. Testar queries
-npx ts-node test-queries.ts
+# 3. Rodar aplicação
+npm run start:dev
 ```
-
-> 📖 **Documentação completa**: [docs/reports/HOW_TO_TEST_NEW_SCHEMA.md](docs/reports/HOW_TO_TEST_NEW_SCHEMA.md)
 
 ### 📌 Status de execução do banco
 
 - **Schema ativo em runtime**: `prisma/schema.prisma`
-- **Schema V3 avançado (referência/evolução)**: `prisma/schema-production.prisma` e `prisma/schema-refactored.prisma`
-- **Guia de alinhamento**: [docs/SCHEMA_STATUS.md](docs/SCHEMA_STATUS.md)
+- **Fonte única de schema**: `prisma/schema.prisma`
 
 ---
 

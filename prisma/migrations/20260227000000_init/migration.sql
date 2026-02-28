@@ -1,11 +1,11 @@
 -- CreateEnum
-CREATE TYPE "BloodType" AS ENUM ('A_POS', 'A_NEG', 'B_POS', 'B_NEG', 'AB_POS', 'AB_NEG', 'O_POS', 'O_NEG');
+CREATE TYPE "blood_type_enum" AS ENUM ('A_POS', 'A_NEG', 'B_POS', 'B_NEG', 'AB_POS', 'AB_NEG', 'O_POS', 'O_NEG');
 
 -- CreateTable
 CREATE TABLE "stock" (
     "id" UUID NOT NULL,
     "company_id" UUID NOT NULL,
-    "blood_type" "BloodType" NOT NULL,
+    "blood_type" "blood_type_enum" NOT NULL,
     "quantity_a" INTEGER NOT NULL,
     "quantity_b" INTEGER NOT NULL,
     "quantity_ab" INTEGER NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE "batch" (
     "id" UUID NOT NULL,
     "company_id" UUID NOT NULL,
     "code" TEXT NOT NULL,
-    "blood_type" "BloodType" NOT NULL,
+    "blood_type" "blood_type_enum" NOT NULL,
     "entry_quantity" INTEGER NOT NULL,
     "exit_quantity" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

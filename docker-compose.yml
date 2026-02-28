@@ -42,7 +42,7 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
-    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"
+    command: sh -c "npx prisma migrate resolve --rolled-back 20260228020046_migrate_v2_to_v3 || true && npx prisma migrate deploy && npx prisma db seed && node dist/main.js"
 
 volumes:
   postgres_data:

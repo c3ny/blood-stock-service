@@ -1,28 +1,19 @@
 node_modules/
 dist/
 coverage/
-logs/
+build/
+.gradle/
+
 *.log
+build_output.txt
+current-logs.txt
+log.txt
+build.log
+build_err.log
+docker_build.log
 
 .env
 .env.*
 !.env.example
 
 .DS_Store
-
-build/
-.gradle/node_modules/
-dist/
-coverage/
-logs/
-*.log
-
-.env
-.env.*
-!.env.example
-
-.DS_Store
-
-build/
-.gradle/build
-.gradle

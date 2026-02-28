@@ -1,183 +1,168 @@
-const { PrismaClient, BloodType } = require('@prisma/client');
+const { PrismaClient, BloodType, UserRole, MovementType, BloodBagStatus } = require('@prisma/client');
 const { randomUUID } = require('crypto');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 V3 Schema - Starting database seeding...');
 
-  // Clean existing data
-  await prisma.stockMovement.deleteMany();
-  await prisma.batch.deleteMany();
-  await prisma.stock.deleteMany();
-  console.log('✅ Cleaned existing data');
-
-  // Create company IDs for demonstration
-  const companyIds = {
-    hospitalA: randomUUID(),
-    hospitalB: randomUUID(),
-    bloodBankCenter: randomUUID(),
-  };
-
-  console.log('🏥 Company IDs created:', companyIds);
-
-  // Create stock entries for each blood type and company
-  const stockData = [];
-  
-  // Hospital A - All blood types with moderate stock
-  for (const bloodType of Object.values(BloodType)) {
-    stockData.push({
-      id: randomUUID(),
-      companyId: companyIds.hospitalA,
-      bloodType: bloodType,
-      quantityA: bloodType.startsWith('A_') ? 50 : 0,
-      quantityB: bloodType.startsWith('B_') && !bloodType.startsWith('AB_') ? 40 : 0,
-      quantityAB: bloodType.startsWith('AB_') ? 30 : 0,
-      quantityO: bloodType.startsWith('O_') ? 100 : 0,
-    });
+  // Clean existing V3 data
+  try {
+    await prisma.movement.deleteMany({});
+    await prisma.bloodBag.deleteMany({});
+    await prisma.batch.deleteMany({});
+    await prisma.user.deleteMany({});
+    await prisma.company.deleteMany({});
+    await prisma.eventLog.deleteMany({});
+    await prisma.stockAlert.deleteMany({});
+    await prisma.stockView.deleteMany({});
+  } catch (e) {
+    console.log('⚠️  Could not delete tables:', e.message);
   }
 
-  // Hospital B - All blood types with lower stock
-  for (const bloodType of Object.values(BloodType)) {
-    stockData.push({
-      id: randomUUID(),
-      companyId: companyIds.hospitalB,
-      bloodType: bloodType,
-      quantityA: bloodType.startsWith('A_') ? 20 : 0,
-      quantityB: bloodType.startsWith('B_') && !bloodType.startsWith('AB_') ? 15 : 0,
-      quantityAB: bloodType.startsWith('AB_') ? 10 : 0,
-      quantityO: bloodType.startsWith('O_') ? 60 : 0,
-    });
-  }
-
-  // Blood Bank Center - All blood types with high stock
-  for (const bloodType of Object.values(BloodType)) {
-    stockData.push({
-      id: randomUUID(),
-      companyId: companyIds.bloodBankCenter,
-      bloodType: bloodType,
-      quantityA: bloodType.startsWith('A_') ? 150 : 0,
-      quantityB: bloodType.startsWith('B_') && !bloodType.startsWith('AB_') ? 120 : 0,
-      quantityAB: bloodType.startsWith('AB_') ? 80 : 0,
-      quantityO: bloodType.startsWith('O_') ? 200 : 0,
-    });
-  }
-
-  console.log(`📊 Creating ${stockData.length} stock entries...`);
-  
-  const createdStocks = await prisma.$transaction(
-    stockData.map((data) => prisma.stock.create({ data }))
-  );
-
-  console.log(`✅ Created ${createdStocks.length} stock entries`);
-
-  // Create some stock movements (entry and exit examples)
-  const stockMovements = [];
-  
-  // Entry movements for Hospital A
-  const hospitalAStocks = createdStocks.filter(s => s.companyId === companyIds.hospitalA);
-  for (const stock of hospitalAStocks.slice(0, 3)) {
-    const currentQuantity = getStockQuantityByType(stock, stock.bloodType);
-    stockMovements.push({
-      id: randomUUID(),
-      stockId: stock.id,
-      movement: 20,
-      quantityBefore: currentQuantity - 20,
-      quantityAfter: currentQuantity,
-      actionBy: 'system@seed.com',
-      notes: 'Initial stock entry from donation campaign',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    });
-  }
-
-  // Exit movements for Hospital B
-  const hospitalBStocks = createdStocks.filter(s => s.companyId === companyIds.hospitalB);
-  for (const stock of hospitalBStocks.slice(0, 2)) {
-    const currentQuantity = getStockQuantityByType(stock, stock.bloodType);
-    stockMovements.push({
-      id: randomUUID(),
-      stockId: stock.id,
-      movement: -5,
-      quantityBefore: currentQuantity + 5,
-      quantityAfter: currentQuantity,
-      actionBy: 'doctor@hospitalb.com',
-      notes: 'Emergency surgery requirement',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    });
-  }
-
-  console.log(`📝 Creating ${stockMovements.length} stock movements...`);
-  
-  const createdMovements = await prisma.$transaction(
-    stockMovements.map((data) => prisma.stockMovement.create({ data }))
-  );
-
-  console.log(`✅ Created ${createdMovements.length} stock movements`);
-
-  // Create batches
-  const batches = [];
-  
-  // Blood Bank Center - Various batches
-  const batchCodes = ['BATCH-2026-001', 'BATCH-2026-002', 'BATCH-2026-003', 'BATCH-2026-004'];
-  const bloodTypesForBatch = [BloodType.O_POS, BloodType.A_POS, BloodType.B_POS, BloodType.AB_POS];
-  
-  for (let i = 0; i < batchCodes.length; i++) {
-    batches.push({
-      id: randomUUID(),
-      companyId: companyIds.bloodBankCenter,
-      code: batchCodes[i],
-      bloodType: bloodTypesForBatch[i],
-      entryQuantity: 100,
-      exitQuantity: Math.floor(Math.random() * 30),
-    });
-  }
-
-  // Hospital A - Smaller batches
-  batches.push({
-    id: randomUUID(),
-    companyId: companyIds.hospitalA,
-    code: 'HA-BATCH-001',
-    bloodType: BloodType.O_NEG,
-    entryQuantity: 50,
-    exitQuantity: 10,
+  // Create companies
+  const companies = await prisma.company.createMany({
+    data: [
+      {
+        name: 'Central Blood Bank - São Paulo',
+        cnpj: '12.345.678/0001-90',
+        address: 'Rua 1, 100, São Paulo, SP',
+        phone: '(11) 3456-7890',
+        email: 'contact@bloodbank-sp.com.br',
+        city: 'São Paulo',
+        state: 'SP',
+        zipCode: '01234-567',
+        isActive: true,
+      },
+      {
+        name: 'Hospital Regional - Teste',
+        cnpj: '98.765.432/0001-12',
+        address: 'Av Hospital, 500, Rio de Janeiro, RJ',
+        phone: '(21) 9876-5432',
+        email: 'blood@hospital-test.com.br',
+        city: 'Rio de Janeiro',
+        state: 'RJ',
+        zipCode: '20000-000',
+        isActive: true,
+      },
+    ],
   });
 
-  batches.push({
-    id: randomUUID(),
-    companyId: companyIds.hospitalA,
-    code: 'HA-BATCH-002',
-    bloodType: BloodType.A_POS,
-    entryQuantity: 60,
-    exitQuantity: 15,
-  });
+  console.log(`✅ Created ${companies.count} companies`);
 
-  console.log(`🏷️  Creating ${batches.length} batches...`);
-  
-  const createdBatches = await prisma.$transaction(
-    batches.map((data) => prisma.batch.create({ data }))
-  );
+  // Get companies
+  const companyIds = await prisma.company.findMany();
 
-  console.log(`✅ Created ${createdBatches.length} batches`);
+  // Create users
+  const users = [];
+  for (const company of companyIds) {
+    for (const role of [UserRole.ADMIN, UserRole.TECHNICIAN, UserRole.DOCTOR]) {
+      users.push({
+        companyId: company.id,
+        name: `${role} User - ${company.name}`,
+        email: `${role.toLowerCase()}@${company.cnpj.split('/')[0]}.local`,
+        password: '$2b$10$hash_placeholder', // Dummy hash
+        role: role,
+        isActive: true,
+      });
+    }
+  }
+
+  const createdUsers = await prisma.user.createMany({ data: users });
+  console.log(`✅ Created ${createdUsers.count} users`);
+
+  // Create batches with blood bags
+  const companyId = companyIds[0].id;
+  let bloodBagCount = 0;
+
+  for (const bloodType of Object.values(BloodType)) {
+    // Create batch
+    const batch = await prisma.batch.create({
+      data: {
+        companyId,
+        code: `BATCH-${bloodType}-${Date.now()}`,
+        bloodType,
+        receivedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000),
+        donorReference: 'Donation Campaign 2026',
+        sourceLocation: 'Central Blood Bank',
+      },
+    });
+
+    // Create blood bags for this batch
+    const bagCount = Math.floor(Math.random() * 30) + 10; // 10-40 bags per type
+    const bags = [];
+    for (let i = 0; i < bagCount; i++) {
+      bags.push({
+        batchId: batch.id,
+        bagCode: `${batch.code}-BAG-${String(i + 1).padStart(5, '0')}`,
+        bloodType,
+        volume: 450,
+        status: i < Math.max(1, Math.floor(bagCount * 0.3)) ? BloodBagStatus.RESERVED : BloodBagStatus.AVAILABLE,
+        expiresAt: batch.expiresAt,
+      });
+    }
+
+    await prisma.bloodBag.createMany({ data: bags });
+    bloodBagCount += bagCount;
+  }
+
+  console.log(`✅ Created ${Object.values(BloodType).length} batches with ${bloodBagCount} blood bags`);
+
+  // Create some movements
+  const user = await prisma.user.findFirst({ where: { companyId } });
+  const movements = [];
+
+  for (let i = 0; i < 5; i++) {
+    const randomBloodType = Object.values(BloodType)[Math.floor(Math.random() * 8)];
+    movements.push({
+      companyId,
+      userId: user.id,
+      type: i % 2 === 0 ? MovementType.ENTRY_DONATION : MovementType.EXIT_TRANSFUSION,
+      bloodType: randomBloodType,
+      quantity: Math.floor(Math.random() * 5) + 1,
+      origin: i % 2 === 0 ? 'Donor' : 'Patient',
+      notes:  `Movement #${i + 1}`,
+    });
+  }
+
+  await prisma.movement.createMany({ data: movements });
+  console.log(`✅ Created ${movements.length} movements`);
+
+  // Update StockView
+  const stockViewData = Object.values(BloodType).map(bloodType => ({
+    companyId,
+    bloodType,
+    availableCount: Math.floor(Math.random() * 20) + 5,
+    reservedCount: Math.floor(Math.random() * 5),
+    totalVolume: (Math.floor(Math.random() * 20) + 5) * 450,
+    availableVolume: (Math.floor(Math.random() * 18) + 4) * 450,
+  }));
+
+  for (const data of stockViewData) {
+    await prisma.stockView.upsert({
+      where: {
+        unique_stock_per_company_blood_type: {
+          companyId: data.companyId,
+          bloodType: data.bloodType,
+        },
+      },
+      update: data,
+      create: data,
+    });
+  }
+
+  console.log(`✅ Updated StockView for ${stockViewData.length} blood types`);
 
   // Summary
-  console.log('\n🎉 Seeding completed successfully!');
+  console.log('\n🎉 V3 Seeding completed successfully!');
   console.log('\n📈 Summary:');
-  console.log(`   - Companies: ${Object.keys(companyIds).length}`);
-  console.log(`   - Stock entries: ${createdStocks.length}`);
-  console.log(`   - Stock movements: ${createdMovements.length}`);
-  console.log(`   - Batches: ${createdBatches.length}`);
-  console.log('\n🔑 Sample Stock IDs for testing:');
-  console.log(`   Hospital A (O+): ${hospitalAStocks.find(s => s.bloodType === BloodType.O_POS)?.id}`);
-  console.log(`   Hospital B (A+): ${hospitalBStocks.find(s => s.bloodType === BloodType.A_POS)?.id}`);
-  console.log(`   Blood Bank (AB+): ${createdStocks.find(s => s.companyId === companyIds.bloodBankCenter && s.bloodType === BloodType.AB_POS)?.id}`);
-}
-
-function getStockQuantityByType(stock, bloodType) {
-  if (bloodType.startsWith('A_')) return stock.quantityA;
-  if (bloodType.startsWith('B_') && !bloodType.startsWith('AB_')) return stock.quantityB;
-  if (bloodType.startsWith('AB_')) return stock.quantityAB;
-  if (bloodType.startsWith('O_')) return stock.quantityO;
-  return 0;
+  console.log(`   - Companies: ${companyIds.length}`);
+  console.log(`   - Users: ${users.length}`);
+  console.log(`   - Batches: ${Object.values(BloodType).length}`);
+  console.log(`   - Blood Bags: ${bloodBagCount}`);
+  console.log(`   - Movements: ${movements.length}`);
+  console.log(`   - StockView entries: ${stockViewData.length}`);
 }
 
 main()

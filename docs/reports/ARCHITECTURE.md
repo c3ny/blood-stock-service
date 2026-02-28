@@ -212,7 +212,8 @@
                  │
                  ▼ (Delegates to use case)
         ┌─────────────────────────────┐
-        │ AdjustStockService.execute()│
+        │ AdjustStockUseCaseHandler   │
+        │ .execute()                  │
         │ Validates input             │
         └────────┬────────────────────┘
                  │
