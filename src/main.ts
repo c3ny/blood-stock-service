@@ -181,6 +181,22 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  
+  // Remove o prefix global dos paths para evitar duplicação no Swagger UI
+  console.log('[Swagger] Paths originais:', Object.keys(document.paths));
+  const newPaths: any = {};
+  Object.keys(document.paths).forEach(path => {
+    if (path.startsWith('/api/v1')) {
+      const newPath = path.substring(7); // Remove '/api/v1'
+      newPaths[newPath] = document.paths[path];
+      console.log(`[Swagger] Remapping: ${path} -> ${newPath}`);
+    } else {
+      newPaths[path] = document.paths[path];
+    }
+  });
+  document.paths = newPaths;
+  console.log('[Swagger] Paths modificados:', Object.keys(document.paths));
+  
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,

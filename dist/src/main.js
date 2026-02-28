@@ -142,6 +142,20 @@ async function bootstrap() {
         .addServer('https://api.bloodstock.com', 'Ambiente de Produção')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
+    console.log('[Swagger] Paths originais:', Object.keys(document.paths));
+    const newPaths = {};
+    Object.keys(document.paths).forEach(path => {
+        if (path.startsWith('/api/v1')) {
+            const newPath = path.substring(7);
+            newPaths[newPath] = document.paths[path];
+            console.log(`[Swagger] Remapping: ${path} -> ${newPath}`);
+        }
+        else {
+            newPaths[path] = document.paths[path];
+        }
+    });
+    document.paths = newPaths;
+    console.log('[Swagger] Paths modificados:', Object.keys(document.paths));
     swagger_1.SwaggerModule.setup('api-docs', app, document, {
         swaggerOptions: {
             persistAuthorization: true,
