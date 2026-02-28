@@ -4,11 +4,25 @@ on:
   pull_request:
     branches: ["**"]
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "develop"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint-test-build:
+  node-checks:
+    name: Node checks (${{ matrix.task }})
+    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [lint, unit, build]
 
     steps:
       - name: Checkout
@@ -19,24 +33,115 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
+        if: ${{ hashFiles('prisma/schema.prisma') != '' || hashFiles('prisma/schema-production.prisma') != '' || hashFiles('prisma/schema-refactored.prisma') != '' }}
         run: npx prisma generate
 
       - name: Lint
+        if: matrix.task == 'lint'
         run: npm run lint
 
+      - name: Unit tests
+        if: matrix.task == 'unit'
+        run: npm test
+
       - name: Build
+        if: matrix.task == 'build'
         run: npm run build
 
-      - name: Run unit tests
-        run: npm test -- --runInBand
+  node-e2e:
+    name: Node e2e
+    if: ${{ hashFiles('package.json') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [node-checks]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bloodstock_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client
+        if: ${{ hashFiles('prisma/schema.prisma') != '' || hashFiles('prisma/schema-production.prisma') != '' || hashFiles('prisma/schema-refactored.prisma') != '' }}
+        run: npx prisma generate
 
       - name: Run e2e tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bloodstock_test?schema=public
+          NODE_ENV: test
         run: npm run test:e2e -- --runInBand
+
+  java-checks:
+    name: Java checks
+    if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts', '**/pom.xml') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Gradle
+        if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts') != '' }}
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        if: ${{ hashFiles('gradlew') != '' }}
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts') != '' }}
+        run: ./gradlew build --no-daemon
+
+      - name: Build with Maven
+        if: ${{ hashFiles('**/pom.xml') != '' }}
+        run: mvn -B verify
+
+  docker-smoke:
+    name: Docker smoke build
+    if: ${{ hashFiles('Dockerfile') != '' && hashFiles('package.json') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [node-checks, node-e2e]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build Docker image
         run: docker build -t blood-stock-service:ci .

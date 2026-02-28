@@ -2,64 +2,120 @@ name: Code Quality
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  code-quality:
-    name: Code Quality Analysis
+  node-quality:
+    name: Node quality
+    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: ☕ Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
 
-      - name: 🐘 Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Type check / lint
+        run: npm run lint
 
-      - name: 🔧 Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Run coverage
+        run: npm run test:cov
 
-      - name: 🔍 Run Checkstyle
-        run: ./gradlew checkstyleMain checkstyleTest --no-daemon || true
-
-      - name: 🐛 Run SpotBugs
-        run: ./gradlew spotbugsMain --no-daemon || true
-
-      - name: 📊 Generate code coverage report
-        run: ./gradlew jacocoTestReport --no-daemon || true
-        env:
-          CI: true
-
-      - name: 📈 Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: build/reports/jacoco/test/jacocoTestReport.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: 📄 Upload quality reports
+      - name: Upload Node coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: quality-reports
+          name: node-coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+      - name: Upload Node coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          directory: coverage
+          flags: node
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  java-quality:
+    name: Java quality
+    if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon
+
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain --no-daemon
+
+      - name: Generate code coverage report
+        run: ./gradlew jacocoTestReport --no-daemon
+        env:
+          CI: true
+
+      - name: Upload Java coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/reports/jacoco/test/jacocoTestReport.xml
+          flags: java
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Java quality reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-quality-reports
           path: |
             build/reports/checkstyle/
             build/reports/spotbugs/
             build/reports/jacoco/
+          if-no-files-found: ignore
 
-      - name: 💬 Comment PR with coverage
+      - name: Comment PR with Java coverage
         if: github.event_name == 'pull_request'
         uses: madrapps/jacoco-report@v1.6.1
         with:
