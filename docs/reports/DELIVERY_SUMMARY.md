@@ -333,16 +333,16 @@ cat NEXT_STEPS_CHECKLIST.md
 ## 📋 CHECKLIST DE PRÓXIMA AÇÃO
 
 **AGORA (5 minutos)**:
-- [ ] Ler [REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)
+- [ ] Ler [REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md)
 - [ ] Ler [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) (este arquivo)
 
 **HOJE (1 hora)**:
-- [ ] Ler [COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md) - Partes 1, 2, 3
+- [ ] Ler [COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md) - Partes 1, 2, 3
 - [ ] Revisar [schema-refactored.prisma](prisma/schema-refactored.prisma)
 
 **ESTA SEMANA (1 dia)**:
 - [ ] Testar schema localmente seguindo [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md)
-- [ ] Explorar [queries-refactored.ts](src/examples/queries-refactored.ts)
+- [ ] Explorar [queries-refactored.ts](../../src/examples/queries-refactored.ts)
 
 **DECISÃO**:
 - [ ] **Aprovar?** → Ir para NEXT_STEPS_CHECKLIST.md - Fase 2
@@ -406,13 +406,13 @@ cat NEXT_STEPS_CHECKLIST.md
 👉 [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - FAQ
 
 ### Entender o Problema
-👉 [REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md) - Seção "Problemas Identificados"
+👉 [REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md) - Seção "Problemas Identificados"
 
 ### Implementação
-👉 [queries-refactored.ts](src/examples/queries-refactored.ts) - 20+ exemplos práticos
+👉 [queries-refactored.ts](../../src/examples/queries-refactored.ts) - 20+ exemplos práticos
 
 ### Migração
-👉 [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) - 2 estratégias completas
+👉 [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) - 2 estratégias completas
 
 ### Testar Agora
 👉 [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md) - 30 minutos
@@ -429,7 +429,7 @@ Você agora tem **tudo** o que precisa para transformar seu sistema de estoque d
 ✅ Auditoria completa (compliance)  
 ✅ Alertas proativos (operações)  
 
-**Próximo passo**: Leia o [Resumo Executivo](docs/REFACTORING_SUMMARY.md) e decida! 🚀
+**Próximo passo**: Leia o [Resumo Executivo](../REFACTORING_SUMMARY.md) e decida! 🚀
 
 ---
 

@@ -55,10 +55,11 @@ O **Blood Stock Service** é uma API RESTful para gerenciamento de estoque de sa
 |-----------|-----------|---------|
 | **[📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md)** | Visão geral visual com comparações e métricas | ~15KB |
 | **[📖 Análise Completa](docs/COMPLETE_SCHEMA_ANALYSIS.md)** | Análise detalhada com 8 problemas identificados + solução | ~100KB |
-| **[🔧 Schema Refatorado](prisma/schema-refactored.prisma)** | Schema Prisma production-ready (8 modelos, 5 enums) | 500 linhas |
+| **[🔧 Schema Refatorado](prisma/schema-refactored.prisma)** | Schema Prisma avançado para evolução (V3) | 500 linhas |
 | **[🚀 Guia de Migração](docs/MIGRATION_GUIDE.md)** | 2 estratégias de migração (Reset vs Transform) | ~15KB |
 | **[💻 Exemplos de Queries](src/examples/queries-refactored.ts)** | 20+ funções prontas para uso | 700 linhas |
-| **[🧪 Como Testar](HOW_TO_TEST_NEW_SCHEMA.md)** | Guia passo a passo para testar novo schema | ~10KB |
+| **[🧪 Como Testar](docs/reports/HOW_TO_TEST_NEW_SCHEMA.md)** | Guia passo a passo para testar novo schema | ~10KB |
+| **[🧭 Status do Schema](docs/SCHEMA_STATUS.md)** | Alinhamento entre schema ativo e schemas V3 | ~3KB |
 
 ### 🎯 Comparação Rápida
 
@@ -84,7 +85,13 @@ npx ts-node prisma/seed-refactored.ts
 npx ts-node test-queries.ts
 ```
 
-> 📖 **Documentação completa**: [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md)
+> 📖 **Documentação completa**: [docs/reports/HOW_TO_TEST_NEW_SCHEMA.md](docs/reports/HOW_TO_TEST_NEW_SCHEMA.md)
+
+### 📌 Status de execução do banco
+
+- **Schema ativo em runtime**: `prisma/schema.prisma`
+- **Schema V3 avançado (referência/evolução)**: `prisma/schema-production.prisma` e `prisma/schema-refactored.prisma`
+- **Guia de alinhamento**: [docs/SCHEMA_STATUS.md](docs/SCHEMA_STATUS.md)
 
 ---
 
@@ -249,13 +256,13 @@ npm test
 ### Testes Unitários (Domínio)
 
 ```bash
-npm run test:unit
+npm test
 ```
 
 ### Testes de Integração
 
 ```bash
-npm run test:integration
+npm run test:e2e
 ```
 
 ### Cobertura de Código
@@ -272,12 +279,12 @@ npm run test:cov
 |--------|-----------|
 | `npm run start` | Inicia aplicação em modo produção |
 | `npm run start:dev` | Inicia com hot-reload (desenvolvimento) |
-| `npm run start:debug` | Inicia em modo debug |
+| `npm run start:prod` | Inicia aplicação usando `dist/main` |
 | `npm run build` | Compila TypeScript para JavaScript |
 | `npm test` | Executa todos os testes |
+| `npm run test:e2e` | Executa testes end-to-end |
 | `npm run test:cov` | Executa testes com cobertura |
-| `npm run lint` | Verifica padrões de código (ESLint) |
-| `npm run format` | Formata código (Prettier) |
+| `npm run lint` | Executa type-check com TypeScript (`tsc --noEmit`) |
 | `npx prisma studio` | Abre GUI do Prisma para visualizar dados |
 | `npx prisma migrate dev` | Cria nova migration |
 | `npx prisma db seed` | Popula banco com dados de teste |
@@ -291,38 +298,34 @@ blood-stock-service/
 ├── src/
 │   ├── domain/                        # 🎯 Camada de Domínio
 │   │   ├── entities/
-│   │   │   ├── Stock.ts               # Entidade de estoque
-│   │   │   ├── StockMovement.ts       # Entidade de movimentação
-│   │   │   └── Batch.ts               # Entidade de lote
+│   │   │   ├── stock-item.entity.ts
+│   │   │   ├── stock-movement.entity.ts
+│   │   │   └── batch.entity.ts
 │   │   ├── value-objects/
-│   │   │   ├── BloodType.ts           # Tipo sanguíneo (VO)
-│   │   │   └── StockQuantity.ts       # Quantidade de estoque (VO)
+│   │   │   ├── blood-type.vo.ts
+│   │   │   └── quantity.vo.ts
 │   │   ├── services/
-│   │   │   └── StockAdjustmentService.ts
+│   │   │   └── batch-stock-policy.service.ts
 │   │   └── errors/
-│   │       └── InsufficientStockError.ts
+│   │       └── insufficient-stock.error.ts
 │   │
 │   ├── application/                   # 📋 Camada de Aplicação
-│   │   └── use-cases/
-│   │       └── adjust-stock/
-│   │           ├── AdjustStockUseCase.ts
-│   │           └── AdjustStockCommand.ts
+│   │   └── stock/
+│   │       ├── ports/
+│   │       └── use-cases/
 │   │
 │   ├── adapters/                      # 🔌 Camada de Adaptadores
 │   │   ├── in/
 │   │   │   └── web/
 │   │   │       ├── stock/
-│   │   │       │   ├── stock.controller.ts
-│   │   │       │   └── dto/
 │   │   │       ├── health/
-│   │   │       │   ├── health.controller.ts
-│   │   │       │   └── dto/
 │   │   │       └── common/
 │   │   │           └── error-response.dto.ts
 │   │   └── out/
 │   │       └── persistence/
 │   │           └── stock/
-│   │               ├── stock-prisma.adapter.ts
+│   │               ├── stock-prisma.repository.ts
+│   │               ├── stock-movement-prisma.repository.ts
 │   │               └── stock-prisma.mapper.ts
 │   │
 │   ├── app.module.ts                  # Módulo raiz do NestJS
@@ -337,6 +340,7 @@ blood-stock-service/
 │   └── init.sql                       # Script de inicialização do DB
 │
 ├── docs/
+│   ├── README.md                      # Índice central de documentação
 │   └── API.md                         # Documentação completa da API
 │
 ├── Dockerfile                         # Multi-stage Docker build
@@ -363,6 +367,12 @@ DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}
 # Application
 PORT=3000
 NODE_ENV=development
+
+# Rate limit distribuído (opcional em produção)
+# Sem REDIS_URL, o fallback é em memória (single-instance)
+REDIS_URL=redis://localhost:6379
+RATE_LIMIT_MAX_REQUESTS=120
+RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
 ---

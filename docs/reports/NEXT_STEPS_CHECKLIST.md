@@ -10,11 +10,11 @@
 
 ### Documentação para Revisar
 
-- [ ] **Ler** [docs/REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)
+- [ ] **Ler** [docs/REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md)
   - Resumo executivo com comparações visuais
   - Tempo estimado: **10 minutos**
   
-- [ ] **Ler** [docs/COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md) (seções principais)
+- [ ] **Ler** [docs/COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md) (seções principais)
   - Parte 1: 8 problemas identificados
   - Parte 4: Exemplos de queries práticas
   - Tempo estimado: **20 minutos**
@@ -114,7 +114,7 @@
 
 ### 2.5 Testar Fluxos Completos
 
-Use as funções em [src/examples/queries-refactored.ts](src/examples/queries-refactored.ts):
+Use as funções em [src/examples/queries-refactored.ts](../../src/examples/queries-refactored.ts):
 
 - [ ] **Entrada de lote**
   ```typescript
@@ -153,7 +153,7 @@ Use as funções em [src/examples/queries-refactored.ts](src/examples/queries-re
 
 ### 2.6 Validação SQL
 
-Execute as queries de validação em [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) seção "5.1 Queries de Validação":
+Execute as queries de validação em [docs/MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) seção "5.1 Queries de Validação":
 
 - [ ] **Validar FKs** (sem órfãos)
 - [ ] **Validar bloodType** (consistente entre BloodBag e Movement)
@@ -364,7 +364,7 @@ Execute as queries de validação em [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GU
 
 ### 5.3 Migração
 
-Seguir estratégia escolhida em [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md):
+Seguir estratégia escolhida em [docs/MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md):
 
 - [ ] **Opção 1: Reset Completo** (se sem dados importantes)
   - DROP todas as tabelas
@@ -443,13 +443,13 @@ Seguir estratégia escolhida em [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.m
 ## 📞 SUPORTE
 
 **Dúvidas sobre o schema?**
-- Consulte: [docs/COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md)
+- Consulte: [docs/COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md)
 
 **Problemas na migração?**
-- Consulte: [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
+- Consulte: [docs/MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 
 **Exemplos de código?**
-- Consulte: [src/examples/queries-refactored.ts](src/examples/queries-refactored.ts)
+- Consulte: [src/examples/queries-refactored.ts](../../src/examples/queries-refactored.ts)
 
 **Como testar?**
 - Consulte: [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md)

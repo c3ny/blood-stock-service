@@ -11,16 +11,16 @@
 
 | # | Arquivo | Tamanho | Descrição | Leitura |
 |---|---------|---------|-----------|---------|
-| 1 | [**docs/REFACTORING_SUMMARY.md**](docs/REFACTORING_SUMMARY.md) | ~15KB | ⭐ **COMECE AQUI** - Resumo executivo visual com comparações | 10 min |
-| 2 | [**docs/COMPLETE_SCHEMA_ANALYSIS.md**](docs/COMPLETE_SCHEMA_ANALYSIS.md) | ~100KB | 📖 Análise completa em 9 partes (problemas → solução → migração) | 1-2h |
-| 3 | [**docs/MIGRATION_GUIDE.md**](docs/MIGRATION_GUIDE.md) | ~15KB | 🚀 Guia de migração produção (2 estratégias + rollback) | 20 min |
+| 1 | [**docs/REFACTORING_SUMMARY.md**](../REFACTORING_SUMMARY.md) | ~15KB | ⭐ **COMECE AQUI** - Resumo executivo visual com comparações | 10 min |
+| 2 | [**docs/COMPLETE_SCHEMA_ANALYSIS.md**](../COMPLETE_SCHEMA_ANALYSIS.md) | ~100KB | 📖 Análise completa em 9 partes (problemas → solução → migração) | 1-2h |
+| 3 | [**docs/MIGRATION_GUIDE.md**](../MIGRATION_GUIDE.md) | ~15KB | 🚀 Guia de migração produção (2 estratégias + rollback) | 20 min |
 
 ### 🔧 Código Técnico
 
 | # | Arquivo | Tamanho | Descrição | Uso |
 |---|---------|---------|-----------|-----|
 | 4 | [**prisma/schema-refactored.prisma**](prisma/schema-refactored.prisma) | 500 linhas | 🔧 Schema Prisma production-ready (8 modelos + 5 enums) | Aplicar |
-| 5 | [**src/examples/queries-refactored.ts**](src/examples/queries-refactored.ts) | 700 linhas | 💻 20+ funções práticas (FIFO, alertas, relatórios) | Copiar |
+| 5 | [**src/examples/queries-refactored.ts**](../../src/examples/queries-refactored.ts) | 700 linhas | 💻 20+ funções práticas (FIFO, alertas, relatórios) | Copiar |
 
 ### 📋 Guias Práticos
 
@@ -40,7 +40,7 @@
 
 | # | Arquivo | Mudança | Descrição |
 |---|---------|---------|-----------|
-| 10 | [**README.md**](README.md) | Atualizado | ➕ Adicionada seção "Schema Refatorado" no índice |
+| 10 | [**README.md**](../../README.md) | Atualizado | ➕ Adicionada seção "Schema Refatorado" no índice |
 
 ---
 
@@ -49,23 +49,23 @@
 ### Iniciante? Comece aqui:
 
 1. [DELIVERY_SUMMARY.md](DELIVERY_SUMMARY.md) - 5 min
-2. [docs/REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md) - 10 min
+2. [docs/REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md) - 10 min
 3. [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md) - 30 min (hands-on)
 
 ### Desenvolvedor? Vá direto para:
 
-1. [docs/COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md) - Partes 1, 2, 4
+1. [docs/COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md) - Partes 1, 2, 4
 2. [prisma/schema-refactored.prisma](prisma/schema-refactored.prisma)
-3. [src/examples/queries-refactored.ts](src/examples/queries-refactored.ts)
+3. [src/examples/queries-refactored.ts](../../src/examples/queries-refactored.ts)
 
 ### Gestor? Revise:
 
-1. [docs/REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)
+1. [docs/REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md)
 2. [NEXT_STEPS_CHECKLIST.md](NEXT_STEPS_CHECKLIST.md) - Fase 1 (Revisão)
 
 ### DevOps? Consulte:
 
-1. [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
+1. [docs/MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 2. [NEXT_STEPS_CHECKLIST.md](NEXT_STEPS_CHECKLIST.md) - Fase 5 (Migração)
 
 ---
@@ -92,24 +92,24 @@
 
 | Tópico | Documento |
 |--------|-----------|
-| **Problemas do schema atual** | [REFACTORING_SUMMARY.md - Problemas](docs/REFACTORING_SUMMARY.md#problemas-identificados) |
-| **FIFO (como funciona)** | [queries-refactored.ts - registerTransfusion](src/examples/queries-refactored.ts#L200-L250) |
-| **Comparação (antes vs depois)** | [REFACTORING_SUMMARY.md - Comparação](docs/REFACTORING_SUMMARY.md#comparação-antes-vs-depois) |
-| **Como migrar produção** | [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) |
+| **Problemas do schema atual** | [REFACTORING_SUMMARY.md - Problemas](../REFACTORING_SUMMARY.md#problemas-identificados) |
+| **FIFO (como funciona)** | [queries-refactored.ts - registerTransfusion](../../src/examples/queries-refactored.ts#L200-L250) |
+| **Comparação (antes vs depois)** | [REFACTORING_SUMMARY.md - Comparação](../REFACTORING_SUMMARY.md#comparação-antes-vs-depois) |
+| **Como migrar produção** | [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) |
 | **Como testar agora** | [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md) |
-| **Performance (métricas)** | [REFACTORING_SUMMARY.md - Métricas](docs/REFACTORING_SUMMARY.md#métricas-de-impacto) |
-| **Compliance ANVISA** | [REFACTORING_SUMMARY.md - Compliance](docs/REFACTORING_SUMMARY.md#compliance-regulatório) |
-| **Alertas (como criar)** | [queries-refactored.ts - Seção 6](src/examples/queries-refactored.ts#L400-L480) |
-| **Relatórios** | [queries-refactored.ts - Seção 7](src/examples/queries-refactored.ts#L500-L580) |
-| **Auditoria (histórico)** | [queries-refactored.ts - getBloodBagHistory](src/examples/queries-refactored.ts#L450-L470) |
+| **Performance (métricas)** | [REFACTORING_SUMMARY.md - Métricas](../REFACTORING_SUMMARY.md#métricas-de-impacto) |
+| **Compliance ANVISA** | [REFACTORING_SUMMARY.md - Compliance](../REFACTORING_SUMMARY.md#compliance-regulatório) |
+| **Alertas (como criar)** | [queries-refactored.ts - Seção 6](../../src/examples/queries-refactored.ts#L400-L480) |
+| **Relatórios** | [queries-refactored.ts - Seção 7](../../src/examples/queries-refactored.ts#L500-L580) |
+| **Auditoria (histórico)** | [queries-refactored.ts - getBloodBagHistory](../../src/examples/queries-refactored.ts#L450-L470) |
 
 ### Por Decisão
 
 | Decisão | Documento |
 |---------|-----------|
-| **Aprovar refatoração?** | [REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md) |
-| **Como implementar?** | [COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md) |
-| **Que código escrever?** | [queries-refactored.ts](src/examples/queries-refactored.ts) |
+| **Aprovar refatoração?** | [REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md) |
+| **Como implementar?** | [COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md) |
+| **Que código escrever?** | [queries-refactored.ts](../../src/examples/queries-refactored.ts) |
 | **Esqueci alguma etapa?** | [NEXT_STEPS_CHECKLIST.md](NEXT_STEPS_CHECKLIST.md) |
 
 ---
@@ -153,23 +153,23 @@ cat HOW_TO_TEST_NEW_SCHEMA.md
 → Consulte [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 
 **Perguntas técnicas?**  
-→ Consulte [COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md)
+→ Consulte [COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md)
 
 **Como testar?**  
 → Consulte [HOW_TO_TEST_NEW_SCHEMA.md](HOW_TO_TEST_NEW_SCHEMA.md)
 
 **Como migrar?**  
-→ Consulte [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
+→ Consulte [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 
 ---
 
 ## ✅ CHECKLIST DE REVISÃO
 
 - [ ] Li [DELIVERY_SUMMARY.md](DELIVERY_SUMMARY.md)
-- [ ] Li [REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)
+- [ ] Li [REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md)
 - [ ] Revisei [schema-refactored.prisma](prisma/schema-refactored.prisma)
-- [ ] Explorei [queries-refactored.ts](src/examples/queries-refactored.ts)
-- [ ] Entendi [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
+- [ ] Explorei [queries-refactored.ts](../../src/examples/queries-refactored.ts)
+- [ ] Entendi [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)
 - [ ] **DECISÃO**: Aprovar? ⬜ SIM  ⬜ NÃO  ⬜ ADIAR
 
 ---

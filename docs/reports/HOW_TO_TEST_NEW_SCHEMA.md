@@ -363,6 +363,6 @@ Se os testes passarem, siga para:
 ---
 
 **Documentação Completa**:
-- [COMPLETE_SCHEMA_ANALYSIS.md](docs/COMPLETE_SCHEMA_ANALYSIS.md) - Análise detalhada
-- [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) - Guia de migração
-- [queries-refactored.ts](src/examples/queries-refactored.ts) - 20+ queries prontas
+- [COMPLETE_SCHEMA_ANALYSIS.md](../COMPLETE_SCHEMA_ANALYSIS.md) - Análise detalhada
+- [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) - Guia de migração
+- [queries-refactored.ts](../../src/examples/queries-refactored.ts) - 20+ queries prontas

@@ -2,22 +2,86 @@ import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import Redis from 'ioredis';
+import { RateLimiterMemory, RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
-interface RateLimitState {
-  count: number;
-  resetAt: number;
+interface RateLimiterSetup {
+  limiter: RateLimiterMemory | RateLimiterRedis;
+  backend: 'memory' | 'redis';
+  redisClient?: Redis;
+}
+
+function createRateLimiter(
+  maxRequests: number,
+  windowSeconds: number,
+): RateLimiterSetup {
+  const redisUrl = process.env.REDIS_URL;
+
+  if (redisUrl) {
+    const redisClient = new Redis(redisUrl, {
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 2,
+      lazyConnect: false,
+    });
+
+    const limiter = new RateLimiterRedis({
+      storeClient: redisClient,
+      keyPrefix: 'blood-stock-rate-limit',
+      points: maxRequests,
+      duration: windowSeconds,
+      insuranceLimiter: new RateLimiterMemory({
+        points: maxRequests,
+        duration: windowSeconds,
+      }),
+    });
+
+    return { limiter, backend: 'redis', redisClient };
+  }
+
+  return {
+    limiter: new RateLimiterMemory({
+      points: maxRequests,
+      duration: windowSeconds,
+    }),
+    backend: 'memory',
+  };
+}
+
+function resolveClientIp(req: any): string {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.length > 0) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const rateLimitMap = new Map<string, RateLimitState>();
-  const rateLimitWindowMs = 60_000;
-  const rateLimitMaxRequests = 120;
+  const rateLimitWindowSeconds = Number(process.env.RATE_LIMIT_WINDOW_SECONDS ?? 60);
+  const rateLimitWindowMs = rateLimitWindowSeconds * 1000;
+  const rateLimitMaxRequests = Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 120);
+  const { limiter, backend, redisClient } = createRateLimiter(
+    rateLimitMaxRequests,
+    rateLimitWindowSeconds,
+  );
 
-  app.use((req: any, res: any, next: () => void) => {
+  if (backend === 'memory') {
+    console.warn('[rate-limit] Using in-memory limiter (single-instance mode).');
+  } else {
+    console.log('[rate-limit] Using Redis-backed limiter (distributed mode).');
+  }
+
+  if (redisClient) {
+    redisClient.on('error', (error) => {
+      console.error('[rate-limit] Redis error:', error.message);
+    });
+  }
+
+  app.use(async (req: any, res: any, next: () => void) => {
     const traceId = req.headers['x-trace-id'] || randomUUID();
     req.traceId = traceId;
     res.setHeader('x-trace-id', traceId);
@@ -26,19 +90,21 @@ async function bootstrap() {
       return next();
     }
 
-    const key = req.ip || req.socket?.remoteAddress || 'unknown';
-    const now = Date.now();
-    const current = rateLimitMap.get(key);
+    const key = resolveClientIp(req);
 
-    if (!current || now > current.resetAt) {
-      rateLimitMap.set(key, { count: 1, resetAt: now + rateLimitWindowMs });
+    try {
+      const result = await limiter.consume(key);
+      res.setHeader('x-ratelimit-limit', String(rateLimitMaxRequests));
+      res.setHeader('x-ratelimit-remaining', String(result.remainingPoints));
+      res.setHeader(
+        'x-ratelimit-reset',
+        String(Math.ceil((Date.now() + result.msBeforeNext) / 1000)),
+      );
       return next();
-    }
-
-    current.count += 1;
-    rateLimitMap.set(key, current);
-
-    if (current.count > rateLimitMaxRequests) {
+    } catch (error) {
+      const rateLimitError = error as RateLimiterRes;
+      const retryAfterMs = rateLimitError?.msBeforeNext ?? rateLimitWindowMs;
+      res.setHeader('retry-after', String(Math.ceil(retryAfterMs / 1000)));
       return res.status(429).json({
         statusCode: 429,
         code: 'RATE_LIMIT_EXCEEDED',
@@ -46,13 +112,11 @@ async function bootstrap() {
         details: {
           windowMs: rateLimitWindowMs,
           maxRequests: rateLimitMaxRequests,
-          retryAfterMs: Math.max(current.resetAt - now, 0),
+          retryAfterMs,
         },
         traceId,
       });
     }
-
-    return next();
   });
 
   app.useGlobalPipes(

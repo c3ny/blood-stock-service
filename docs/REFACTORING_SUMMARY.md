@@ -280,7 +280,7 @@ const losses = await prisma.movement.groupBy({
 | **[prisma/schema-refactored.prisma](../prisma/schema-refactored.prisma)** | ~500 linhas | Schema production-ready com 8 modelos, 5 enums, 40+ índices |
 | **[docs/MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** | 15KB | Guia de migração com 2 estratégias (Reset vs Transform) |
 | **[src/examples/queries-refactored.ts](../src/examples/queries-refactored.ts)** | ~700 linhas | 20+ funções práticas prontas para uso |
-| **[HOW_TO_TEST_NEW_SCHEMA.md](../HOW_TO_TEST_NEW_SCHEMA.md)** | 10KB | Guia de testes passo a passo |
+| **[HOW_TO_TEST_NEW_SCHEMA.md](reports/HOW_TO_TEST_NEW_SCHEMA.md)** | 10KB | Guia de testes passo a passo |
 | **[docs/REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)** | Este arquivo | Resumo executivo visual |
 
 ---
@@ -419,7 +419,7 @@ Siga o guia completo em **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)**
 **Documentação**:
 - Análise Completa: [COMPLETE_SCHEMA_ANALYSIS.md](COMPLETE_SCHEMA_ANALYSIS.md)
 - Migração: [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
-- Testes: [HOW_TO_TEST_NEW_SCHEMA.md](../HOW_TO_TEST_NEW_SCHEMA.md)
+- Testes: [HOW_TO_TEST_NEW_SCHEMA.md](reports/HOW_TO_TEST_NEW_SCHEMA.md)
 - Queries: [queries-refactored.ts](../src/examples/queries-refactored.ts)
 
 **Schema**: [schema-refactored.prisma](../prisma/schema-refactored.prisma)

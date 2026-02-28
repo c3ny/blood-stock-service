@@ -10,19 +10,19 @@
 
 | Objetivo | Documento | Tempo Estimado |
 |----------|-----------|----------------|
-| **Entender o problema e a solução rapidamente** | [📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md) | 10 min |
-| **Ver comparação visual (antes vs depois)** | [📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md) - Seção "Comparação" | 5 min |
-| **Entender os problemas identificados** | [📖 Análise Completa](docs/COMPLETE_SCHEMA_ANALYSIS.md) - Parte 1 | 10 min |
-| **Ver exemplos de queries práticas** | [💻 Exemplos de Queries](src/examples/queries-refactored.ts) | 15 min |
+| **Entender o problema e a solução rapidamente** | [📊 Resumo Executivo](../REFACTORING_SUMMARY.md) | 10 min |
+| **Ver comparação visual (antes vs depois)** | [📊 Resumo Executivo](../REFACTORING_SUMMARY.md) - Seção "Comparação" | 5 min |
+| **Entender os problemas identificados** | [📖 Análise Completa](../COMPLETE_SCHEMA_ANALYSIS.md) - Parte 1 | 10 min |
+| **Ver exemplos de queries práticas** | [💻 Exemplos de Queries](../../src/examples/queries-refactored.ts) | 15 min |
 | **Testar o novo schema agora** | [🧪 Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) | 30 min |
-| **Planejar a migração de produção** | [🚀 Guia de Migração](docs/MIGRATION_GUIDE.md) | 20 min |
+| **Planejar a migração de produção** | [🚀 Guia de Migração](../MIGRATION_GUIDE.md) | 20 min |
 | **Seguir um checklist de implementação** | [✅ Checklist de Próximas Ações](NEXT_STEPS_CHECKLIST.md) | 10 min |
 
 ---
 
 ## 📂 DOCUMENTOS PRINCIPAIS
 
-### 1. 📊 [Resumo Executivo](docs/REFACTORING_SUMMARY.md)
+### 1. 📊 [Resumo Executivo](../REFACTORING_SUMMARY.md)
 
 **O que é**: Visão geral executiva com diagramas, comparações e métricas.
 
@@ -47,7 +47,7 @@
 
 ---
 
-### 2. 📖 [Análise Completa do Schema](docs/COMPLETE_SCHEMA_ANALYSIS.md)
+### 2. 📖 [Análise Completa do Schema](../COMPLETE_SCHEMA_ANALYSIS.md)
 
 **O que é**: Documento técnico completo (~100KB) com análise detalhada.
 
@@ -140,7 +140,7 @@ npx prisma migrate dev --name refactor_blood_stock
 
 ---
 
-### 4. 🚀 [Guia de Migração](docs/MIGRATION_GUIDE.md)
+### 4. 🚀 [Guia de Migração](../MIGRATION_GUIDE.md)
 
 **O que é**: Guia passo a passo para migrar de schema antigo para novo.
 
@@ -197,7 +197,7 @@ npx prisma migrate dev --name refactor_blood_stock
 
 ---
 
-### 5. 💻 [Exemplos de Queries](src/examples/queries-refactored.ts)
+### 5. 💻 [Exemplos de Queries](../../src/examples/queries-refactored.ts)
 
 **O que é**: Arquivo TypeScript com 20+ funções prontas para uso (~700 linhas).
 
@@ -382,36 +382,36 @@ npx prisma generate
 
 ### Entendimento do Problema
 
-- [Resumo Executivo - Problemas Identificados](docs/REFACTORING_SUMMARY.md#problemas-identificados-no-schema-atual)
-- [Análise Completa - Parte 1](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-1-problemas-identificados)
+- [Resumo Executivo - Problemas Identificados](../REFACTORING_SUMMARY.md#problemas-identificados-no-schema-atual)
+- [Análise Completa - Parte 1](../COMPLETE_SCHEMA_ANALYSIS.md#parte-1-problemas-identificados)
 
 ### Solução Proposta
 
-- [Resumo Executivo - Solução](docs/REFACTORING_SUMMARY.md#solução-schema-refatorado)
-- [Análise Completa - Parte 2](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-2-schema-refatorado-solução)
+- [Resumo Executivo - Solução](../REFACTORING_SUMMARY.md#solução-schema-refatorado)
+- [Análise Completa - Parte 2](../COMPLETE_SCHEMA_ANALYSIS.md#parte-2-schema-refatorado-solução)
 - [Schema Prisma](prisma/schema-refactored.prisma)
 
 ### Comparação (Antes vs Depois)
 
-- [Resumo Executivo - Comparação](docs/REFACTORING_SUMMARY.md#comparação-antes-vs-depois)
-- [Análise Completa - Parte 3](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-3-comparação-antes-vs-depois)
+- [Resumo Executivo - Comparação](../REFACTORING_SUMMARY.md#comparação-antes-vs-depois)
+- [Análise Completa - Parte 3](../COMPLETE_SCHEMA_ANALYSIS.md#parte-3-comparação-antes-vs-depois)
 
 ### Exemplos Práticos
 
-- [Resumo Executivo - Exemplo de Transfusão](docs/REFACTORING_SUMMARY.md#exemplo-prático-transfusão-com-fifo)
-- [Análise Completa - Parte 4](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-4-exemplos-de-queries-prisma)
-- [Exemplos de Queries - Arquivo Completo](src/examples/queries-refactored.ts)
+- [Resumo Executivo - Exemplo de Transfusão](../REFACTORING_SUMMARY.md#exemplo-prático-transfusão-com-fifo)
+- [Análise Completa - Parte 4](../COMPLETE_SCHEMA_ANALYSIS.md#parte-4-exemplos-de-queries-prisma)
+- [Exemplos de Queries - Arquivo Completo](../../src/examples/queries-refactored.ts)
 
 ### FIFO (First-In-First-Out)
 
-- [Resumo Executivo - FIFO](docs/REFACTORING_SUMMARY.md#exemplo-prático-transfusão-com-fifo)
-- [Exemplos de Queries - registerTransfusion](src/examples/queries-refactored.ts#L200-L250)
-- [Exemplos de Queries - getNextAvailableBag](src/examples/queries-refactored.ts#L150-L170)
+- [Resumo Executivo - FIFO](../REFACTORING_SUMMARY.md#exemplo-prático-transfusão-com-fifo)
+- [Exemplos de Queries - registerTransfusion](../../src/examples/queries-refactored.ts#L200-L250)
+- [Exemplos de Queries - getNextAvailableBag](../../src/examples/queries-refactored.ts#L150-L170)
 
 ### Migração
 
-- [Guia de Migração - Completo](docs/MIGRATION_GUIDE.md)
-- [Análise Completa - Parte 5](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-5-estratégia-de-migração)
+- [Guia de Migração - Completo](../MIGRATION_GUIDE.md)
+- [Análise Completa - Parte 5](../COMPLETE_SCHEMA_ANALYSIS.md#parte-5-estratégia-de-migração)
 - [Checklist - Fase 5](NEXT_STEPS_CHECKLIST.md#fase-5-migração-de-produção)
 
 ### Testes
@@ -422,26 +422,26 @@ npx prisma generate
 
 ### Performance
 
-- [Resumo Executivo - Métricas](docs/REFACTORING_SUMMARY.md#métricas-de-impacto)
-- [Análise Completa - StockView](docs/COMPLETE_SCHEMA_ANALYSIS.md#stockview)
-- [Exemplos de Queries - recalculateStockView](src/examples/queries-refactored.ts#L600-L650)
+- [Resumo Executivo - Métricas](../REFACTORING_SUMMARY.md#métricas-de-impacto)
+- [Análise Completa - StockView](../COMPLETE_SCHEMA_ANALYSIS.md#stockview)
+- [Exemplos de Queries - recalculateStockView](../../src/examples/queries-refactored.ts#L600-L650)
 
 ### Auditoria e Compliance
 
-- [Resumo Executivo - Benefícios](docs/REFACTORING_SUMMARY.md#benefícios-concretos)
-- [Exemplos de Queries - getBloodBagHistory](src/examples/queries-refactored.ts#L450-L470)
+- [Resumo Executivo - Benefícios](../REFACTORING_SUMMARY.md#benefícios-concretos)
+- [Exemplos de Queries - getBloodBagHistory](../../src/examples/queries-refactored.ts#L450-L470)
 - [Schema Prisma - Movement Model](prisma/schema-refactored.prisma#L100-L130)
 
 ### Alertas
 
-- [Resumo Executivo - Alertas](docs/REFACTORING_SUMMARY.md#alertas-e-monitoramento)
-- [Exemplos de Queries - Seção 6](src/examples/queries-refactored.ts#L400-L480)
+- [Resumo Executivo - Alertas](../REFACTORING_SUMMARY.md#alertas-e-monitoramento)
+- [Exemplos de Queries - Seção 6](../../src/examples/queries-refactored.ts#L400-L480)
 - [Schema Prisma - StockAlert Model](prisma/schema-refactored.prisma#L170-L190)
 
 ### Relatórios
 
-- [Exemplos de Queries - Seção 7](src/examples/queries-refactored.ts#L500-L580)
-- [Análise Completa - getMovementReport](docs/COMPLETE_SCHEMA_ANALYSIS.md#exemplo-7-relatório-de-movimentações)
+- [Exemplos de Queries - Seção 7](../../src/examples/queries-refactored.ts#L500-L580)
+- [Análise Completa - getMovementReport](../COMPLETE_SCHEMA_ANALYSIS.md#exemplo-7-relatório-de-movimentações)
 
 ---
 
@@ -451,11 +451,11 @@ Use esta matriz para encontrar a documentação certa para cada tipo de decisão
 
 | Decisão | Stakeholder | Documento Primário | Documento Secundário |
 |---------|-------------|-------------------|---------------------|
-| **Aprovar refatoração?** | Gestor/Product Owner | [Resumo Executivo](docs/REFACTORING_SUMMARY.md) | [Análise Completa - Parte 1](docs/COMPLETE_SCHEMA_ANALYSIS.md) |
-| **Como implementar?** | Arquiteto/Tech Lead | [Análise Completa](docs/COMPLETE_SCHEMA_ANALYSIS.md) | [Exemplos de Queries](src/examples/queries-refactored.ts) |
-| **Como migrar produção?** | DevOps/DBA | [Guia de Migração](docs/MIGRATION_GUIDE.md) | [Checklist - Fase 5](NEXT_STEPS_CHECKLIST.md) |
-| **Como testar localmente?** | Desenvolvedor | [Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) | [Exemplos de Queries](src/examples/queries-refactored.ts) |
-| **Que código escrever?** | Desenvolvedor | [Exemplos de Queries](src/examples/queries-refactored.ts) | [Análise - Parte 6](docs/COMPLETE_SCHEMA_ANALYSIS.md) |
+| **Aprovar refatoração?** | Gestor/Product Owner | [Resumo Executivo](../REFACTORING_SUMMARY.md) | [Análise Completa - Parte 1](../COMPLETE_SCHEMA_ANALYSIS.md) |
+| **Como implementar?** | Arquiteto/Tech Lead | [Análise Completa](../COMPLETE_SCHEMA_ANALYSIS.md) | [Exemplos de Queries](../../src/examples/queries-refactored.ts) |
+| **Como migrar produção?** | DevOps/DBA | [Guia de Migração](../MIGRATION_GUIDE.md) | [Checklist - Fase 5](NEXT_STEPS_CHECKLIST.md) |
+| **Como testar localmente?** | Desenvolvedor | [Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) | [Exemplos de Queries](../../src/examples/queries-refactored.ts) |
+| **Que código escrever?** | Desenvolvedor | [Exemplos de Queries](../../src/examples/queries-refactored.ts) | [Análise - Parte 6](../COMPLETE_SCHEMA_ANALYSIS.md) |
 | **Esqueci alguma etapa?** | Qualquer um | [Checklist](NEXT_STEPS_CHECKLIST.md) | - |
 
 ---
@@ -464,27 +464,27 @@ Use esta matriz para encontrar a documentação certa para cada tipo de decisão
 
 ### Iniciante (nunca viu o schema)
 
-1. [📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md) - 15 min
+1. [📊 Resumo Executivo](../REFACTORING_SUMMARY.md) - 15 min
 2. [🧪 Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) - 30 min (hands-on)
-3. [💻 Exemplos de Queries](src/examples/queries-refactored.ts) - Explorar funções principais
+3. [💻 Exemplos de Queries](../../src/examples/queries-refactored.ts) - Explorar funções principais
 
 **Total**: ~1 hora
 
 ### Intermediário (conhece schema atual, quer entender novo)
 
-1. [📖 Análise Completa - Parte 1](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-1) - Problemas (10 min)
-2. [📖 Análise Completa - Parte 2](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-2) - Solução (15 min)
-3. [📖 Análise Completa - Parte 3](docs/COMPLETE_SCHEMA_ANALYSIS.md#parte-3) - Comparação (10 min)
+1. [📖 Análise Completa - Parte 1](../COMPLETE_SCHEMA_ANALYSIS.md#parte-1) - Problemas (10 min)
+2. [📖 Análise Completa - Parte 2](../COMPLETE_SCHEMA_ANALYSIS.md#parte-2) - Solução (15 min)
+3. [📖 Análise Completa - Parte 3](../COMPLETE_SCHEMA_ANALYSIS.md#parte-3) - Comparação (10 min)
 4. [🔧 Schema Prisma](prisma/schema-refactored.prisma) - Revisar modelos (20 min)
-5. [💻 Exemplos de Queries](src/examples/queries-refactored.ts) - Principais funções (30 min)
+5. [💻 Exemplos de Queries](../../src/examples/queries-refactored.ts) - Principais funções (30 min)
 
 **Total**: ~1.5 horas
 
 ### Avançado (vai implementar)
 
-1. [📖 Análise Completa](docs/COMPLETE_SCHEMA_ANALYSIS.md) - Completo (1-2 horas)
+1. [📖 Análise Completa](../COMPLETE_SCHEMA_ANALYSIS.md) - Completo (1-2 horas)
 2. [🔧 Schema Prisma](prisma/schema-refactored.prisma) - Detalhado (30 min)
-3. [💻 Exemplos de Queries](src/examples/queries-refactored.ts) - Todas as funções (1 hora)
+3. [💻 Exemplos de Queries](../../src/examples/queries-refactored.ts) - Todas as funções (1 hora)
 4. [🧪 Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) - Executar testes (30 min)
 5. [✅ Checklist](NEXT_STEPS_CHECKLIST.md) - Planejar implementação (30 min)
 
@@ -493,7 +493,7 @@ Use esta matriz para encontrar a documentação certa para cada tipo de decisão
 ### Expert (vai migrar produção)
 
 1. Todo o conteúdo de "Avançado"
-2. [🚀 Guia de Migração](docs/MIGRATION_GUIDE.md) - Completo (1 hora)
+2. [🚀 Guia de Migração](../MIGRATION_GUIDE.md) - Completo (1 hora)
 3. [✅ Checklist - Fase 5](NEXT_STEPS_CHECKLIST.md#fase-5) - Preparação detalhada (2 horas)
 4. Executar migration em staging (3-7 horas)
 
@@ -505,15 +505,15 @@ Use esta matriz para encontrar a documentação certa para cada tipo de decisão
 
 ### "Por onde devo começar?"
 
-→ [📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md) (10 min)
+→ [📊 Resumo Executivo](../REFACTORING_SUMMARY.md) (10 min)
 
 ### "Quais são os problemas do schema atual?"
 
-→ [📊 Resumo Executivo - Problemas](docs/REFACTORING_SUMMARY.md#problemas-identificados-no-schema-atual) (5 min)
+→ [📊 Resumo Executivo - Problemas](../REFACTORING_SUMMARY.md#problemas-identificados-no-schema-atual) (5 min)
 
 ### "Como funciona o FIFO?"
 
-→ [💻 Exemplos de Queries - registerTransfusion](src/examples/queries-refactored.ts#L200-L250)
+→ [💻 Exemplos de Queries - registerTransfusion](../../src/examples/queries-refactored.ts#L200-L250)
 
 ### "Como testar sem afetar produção?"
 
@@ -521,27 +521,27 @@ Use esta matriz para encontrar a documentação certa para cada tipo de decisão
 
 ### "Quanto tempo leva a migração?"
 
-→ [🚀 Guia de Migração - Timeline](docs/MIGRATION_GUIDE.md#timeline) (4-6 dias prep + 3-7h exec)
+→ [🚀 Guia de Migração - Timeline](../MIGRATION_GUIDE.md#timeline) (4-6 dias prep + 3-7h exec)
 
 ### "Vai melhorar a performance?"
 
-→ [📊 Resumo Executivo - Métricas](docs/REFACTORING_SUMMARY.md#métricas-de-impacto) (50x mais rápido)
+→ [📊 Resumo Executivo - Métricas](../REFACTORING_SUMMARY.md#métricas-de-impacto) (50x mais rápido)
 
 ### "É compatível com ANVISA?"
 
-→ [📊 Resumo Executivo - Compliance](docs/REFACTORING_SUMMARY.md#compliance-regulatório) (✅ Sim)
+→ [📊 Resumo Executivo - Compliance](../REFACTORING_SUMMARY.md#compliance-regulatório) (✅ Sim)
 
 ### "Posso reverter se der problema?"
 
-→ [🚀 Guia de Migração - Rollback](docs/MIGRATION_GUIDE.md#rollback)
+→ [🚀 Guia de Migração - Rollback](../MIGRATION_GUIDE.md#rollback)
 
 ### "Como rastrear uma bolsa específica?"
 
-→ [💻 Exemplos de Queries - getBloodBagHistory](src/examples/queries-refactored.ts#L450-L470)
+→ [💻 Exemplos de Queries - getBloodBagHistory](../../src/examples/queries-refactored.ts#L450-L470)
 
 ### "Como funcionam os alertas?"
 
-→ [💻 Exemplos de Queries - Seção 6 (Alertas)](src/examples/queries-refactored.ts#L400-L480)
+→ [💻 Exemplos de Queries - Seção 6 (Alertas)](../../src/examples/queries-refactored.ts#L400-L480)
 
 ---
 
@@ -592,7 +592,7 @@ blood-stock-service/
 
 **Próximo passo recomendado**:
 
-1. Leia o [📊 Resumo Executivo](docs/REFACTORING_SUMMARY.md) (10 min)
+1. Leia o [📊 Resumo Executivo](../REFACTORING_SUMMARY.md) (10 min)
 2. Decida: Aprovar ou não? ([✅ Checklist - Fase 1](NEXT_STEPS_CHECKLIST.md#fase-1-revisão))
 3. Se aprovado, siga [🧪 Como Testar](HOW_TO_TEST_NEW_SCHEMA.md) (30 min)
 
