@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const _domain_1 = require("../../../../domain");
 let StockPrismaMapper = class StockPrismaMapper {
     toDomain(raw) {
-        return _domain_1.StockItem.create(new _domain_1.EntityId(raw.id), new _domain_1.EntityId(raw.companyId), _domain_1.BloodType.fromString(raw.bloodType), new _domain_1.Quantity(raw.quantityA), new _domain_1.Quantity(raw.quantityB), new _domain_1.Quantity(raw.quantityAB), new _domain_1.Quantity(raw.quantityO));
+        return _domain_1.StockItem.create(new _domain_1.EntityId(raw.id), new _domain_1.EntityId(raw.companyId), _domain_1.BloodType.fromString(raw.bloodType), new _domain_1.Quantity(raw.quantityA || 0), new _domain_1.Quantity(raw.quantityB || 0), new _domain_1.Quantity(raw.quantityAB || 0), new _domain_1.Quantity(raw.quantityO || 0));
     }
     toPersistence(domain) {
         return {
@@ -25,6 +25,12 @@ let StockPrismaMapper = class StockPrismaMapper {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+    }
+    prismaToBloodType(prismaType) {
+        return prismaType.replace('_POS', '+').replace('_NEG', '-');
+    }
+    bloodTypeToPrisma(domainType) {
+        return domainType.replace('+', '_POS').replace('-', '_NEG');
     }
 };
 exports.StockPrismaMapper = StockPrismaMapper;

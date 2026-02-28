@@ -33,12 +33,11 @@ exports.AdjustStockModule = AdjustStockModule = __decorate([
             system_date_provider_adapter_1.SystemDateProviderAdapter,
             {
                 provide: ports_1.ADJUST_STOCK_USE_CASE,
-                useFactory: (stockRepository, movementRepository, idGenerator, dateProvider) => {
-                    return new use_cases_1.AdjustStockService(stockRepository, movementRepository, idGenerator, dateProvider);
+                useFactory: (stockRepository, idGenerator, dateProvider) => {
+                    return new use_cases_1.AdjustStockUseCaseHandler(stockRepository, idGenerator, dateProvider);
                 },
                 inject: [
                     stock_prisma_repository_1.StockPrismaRepository,
-                    stock_movement_prisma_repository_1.StockMovementPrismaRepository,
                     uuid_id_generator_adapter_1.UuidIdGeneratorAdapter,
                     system_date_provider_adapter_1.SystemDateProviderAdapter,
                 ],

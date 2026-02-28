@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ADJUST_STOCK_USE_CASE } from '@application/stock/ports';
-import { AdjustStockService } from '@application/stock/use-cases';
+import { AdjustStockUseCaseHandler } from '@application/stock/use-cases';
 import { PrismaService } from '../out/persistence/prisma/prisma.service';
 import { StockPrismaRepository } from '../out/persistence/stock/stock-prisma.repository';
 import { StockPrismaMapper } from '../out/persistence/stock/stock-prisma.mapper';
@@ -28,20 +28,17 @@ import {
       provide: ADJUST_STOCK_USE_CASE,
       useFactory: (
         stockRepository: StockPrismaRepository,
-        movementRepository: StockMovementPrismaRepository,
         idGenerator: UuidIdGeneratorAdapter,
         dateProvider: SystemDateProviderAdapter,
       ) => {
-        return new AdjustStockService(
+        return new AdjustStockUseCaseHandler(
           stockRepository,
-          movementRepository,
           idGenerator,
           dateProvider,
         );
       },
       inject: [
         StockPrismaRepository,
-        StockMovementPrismaRepository,
         UuidIdGeneratorAdapter,
         SystemDateProviderAdapter,
       ],

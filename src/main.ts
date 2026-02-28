@@ -174,10 +174,10 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addServer('http://localhost:3000/api/v1', 'Desenvolvimento Local')
-    .addServer('http://localhost:3000/api/v1', 'Docker Local')
-    .addServer('https://staging.bloodstock.com/api/v1', 'Ambiente de Staging')
-    .addServer('https://api.bloodstock.com/api/v1', 'Ambiente de Produção')
+    .addServer('http://localhost:3000', 'Desenvolvimento Local')
+    .addServer('http://localhost:3000', 'Docker Local')
+    .addServer('https://staging.bloodstock.com', 'Ambiente de Staging')
+    .addServer('https://api.bloodstock.com', 'Ambiente de Produção')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -16,5 +16,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./adjust-stock.command"), exports);
 __exportStar(require("./adjust-stock.result"), exports);
-__exportStar(require("./adjust-stock.service"), exports);
+__exportStar(require("./adjust-stock.use-case"), exports);
 //# sourceMappingURL=index.js.map

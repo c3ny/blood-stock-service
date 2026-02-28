@@ -1,6 +1,7 @@
-import type { Stock as PrismaStock } from '@prisma/client';
 import { StockItem } from '@domain';
 export declare class StockPrismaMapper {
-    toDomain(raw: PrismaStock): StockItem;
-    toPersistence(domain: StockItem): PrismaStock;
+    toDomain(raw: any): StockItem;
+    toPersistence(domain: StockItem): any;
+    private prismaToBloodType;
+    private bloodTypeToPrisma;
 }
