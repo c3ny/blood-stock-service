@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import type { Stock as PrismaStock } from '@prisma/client';
+import type { StockView as PrismaStockView } from '@prisma/client';
 import { StockItem, EntityId, BloodType, Quantity } from '@domain';
 
 @Injectable()
 export class StockPrismaMapper {
-  toDomain(raw: PrismaStock): StockItem {
+  toDomain(raw: any): StockItem {
     return StockItem.create(
       new EntityId(raw.id),
       new EntityId(raw.companyId),
-      BloodType.fromString(this.prismaToBloodType(raw.bloodType)),
-      new Quantity(raw.quantityA),
-      new Quantity(raw.quantityB),
-      new Quantity(raw.quantityAB),
-      new Quantity(raw.quantityO),
+      BloodType.fromString(raw.bloodType),
+      new Quantity(raw.quantityA || 0),
+      new Quantity(raw.quantityB || 0),
+      new Quantity(raw.quantityAB || 0),
+      new Quantity(raw.quantityO || 0),
     );
   }
 
-  toPersistence(domain: StockItem): PrismaStock {
+  toPersistence(domain: StockItem): any {
     return {
       id: domain.getId().getValue(),
       companyId: domain.getCompanyId().getValue(),
-      bloodType: this.bloodTypeToPrisma(domain.getBloodType().getValue()) as any,
+      bloodType: domain.getBloodType().getValue(),
       quantityA: domain.getQuantityA().getValue(),
       quantityB: domain.getQuantityB().getValue(),
       quantityAB: domain.getQuantityAB().getValue(),

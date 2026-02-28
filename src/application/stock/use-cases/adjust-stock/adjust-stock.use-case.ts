@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AdjustStockUseCase, ADJUST_STOCK_USE_CASE } from '../../ports/in/adjust-stock.use-case';
+import { AdjustStockUseCase } from '../../ports/in/adjust-stock.use-case';
 import { AdjustStockCommand } from './adjust-stock.command';
 import { AdjustStockResult } from './adjust-stock.result';
 import { StockRepositoryPort, STOCK_REPOSITORY_PORT } from '../../ports/out/stock-repository.port';
@@ -7,7 +7,7 @@ import { IdGeneratorPort, ID_GENERATOR_PORT } from '../../ports/out/id-generator
 import { DateProviderPort, DATE_PROVIDER_PORT } from '../../ports/out/date-provider.port';
 
 @Injectable()
-export class AdjustStockService implements AdjustStockUseCase {
+export class AdjustStockUseCaseHandler implements AdjustStockUseCase {
   constructor(
     @Inject(STOCK_REPOSITORY_PORT)
     private readonly stockRepository: StockRepositoryPort,

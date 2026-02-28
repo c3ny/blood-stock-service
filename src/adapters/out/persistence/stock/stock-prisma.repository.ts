@@ -8,6 +8,7 @@ import {
   StockRepositoryPort,
 } from '@application/stock/ports';
 import { StockNotFoundError } from '@application/stock/errors';
+import { InsufficientStockError } from '@domain/errors';
 import { StockItem, Quantity } from '@domain';
 import { PrismaService } from '../prisma/prisma.service';
 import { StockPrismaMapper } from './stock-prisma.mapper';
@@ -20,17 +21,24 @@ export class StockPrismaRepository implements StockRepositoryPort {
   ) {}
 
   async findById(id: string): Promise<StockItem | null> {
-    const raw = await this.prisma.stock.findUnique({
+    const raw = await this.prisma.stockView.findUnique({
       where: { id },
     });
 
     if (!raw) return null;
 
-    return this.mapper.toDomain(raw);
+    return this.mapper.toDomain({
+      id: raw.id,
+      companyId: raw.companyId,
+      bloodType: this.prismaToBloodType(raw.bloodType),
+      ...this.toQuantities(raw.availableCount, raw.bloodType),
+      createdAt: raw.lastUpdated,
+      updatedAt: raw.lastUpdated,
+    } as any);
   }
 
   async findReadById(id: string): Promise<StockReadModel | null> {
-    const raw = await this.prisma.stock.findUnique({
+    const raw = await this.prisma.stockView.findUnique({
       where: { id },
     });
 
@@ -40,12 +48,9 @@ export class StockPrismaRepository implements StockRepositoryPort {
       id: raw.id,
       companyId: raw.companyId,
       bloodType: this.prismaToBloodType(raw.bloodType),
-      quantityA: raw.quantityA,
-      quantityB: raw.quantityB,
-      quantityAB: raw.quantityAB,
-      quantityO: raw.quantityO,
-      createdAt: raw.createdAt,
-      updatedAt: raw.updatedAt,
+      ...this.toQuantities(raw.availableCount, raw.bloodType),
+      createdAt: raw.lastUpdated,
+      updatedAt: raw.lastUpdated,
     };
   }
 
@@ -61,13 +66,13 @@ export class StockPrismaRepository implements StockRepositoryPort {
     }
 
     const [items, total] = await Promise.all([
-      this.prisma.stock.findMany({
+      this.prisma.stockView.findMany({
         where,
         skip: (query.page - 1) * query.limit,
         take: query.limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { lastUpdated: 'desc' },
       }),
-      this.prisma.stock.count({ where }),
+      this.prisma.stockView.count({ where }),
     ]);
 
     return {
@@ -75,12 +80,9 @@ export class StockPrismaRepository implements StockRepositoryPort {
         id: raw.id,
         companyId: raw.companyId,
         bloodType: this.prismaToBloodType(raw.bloodType),
-        quantityA: raw.quantityA,
-        quantityB: raw.quantityB,
-        quantityAB: raw.quantityAB,
-        quantityO: raw.quantityO,
-        createdAt: raw.createdAt,
-        updatedAt: raw.updatedAt,
+        ...this.toQuantities(raw.availableCount, raw.bloodType),
+        createdAt: raw.lastUpdated,
+        updatedAt: raw.lastUpdated,
       })),
       total,
       page: query.page,
@@ -90,76 +92,68 @@ export class StockPrismaRepository implements StockRepositoryPort {
 
   async adjustAtomically(command: AtomicAdjustStockCommand): Promise<AtomicAdjustStockResult> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "stock" WHERE id = ${command.stockId} FOR UPDATE`;
-
-      const raw = await tx.stock.findUnique({
+      const stock = await tx.stockView.findUnique({
         where: { id: command.stockId },
       });
 
-      if (!raw) {
+      if (!stock) {
         throw new StockNotFoundError(command.stockId);
       }
 
-      const stock = this.mapper.toDomain(raw);
-      const quantityBefore = this.getQuantityByBloodType(stock).getValue();
-      stock.adjustBy(command.movement);
-      const quantityAfter = this.getQuantityByBloodType(stock).getValue();
+      const nextAvailableCount = stock.availableCount + command.movement;
+      if (nextAvailableCount < 0) {
+        throw new InsufficientStockError(command.stockId, Math.abs(command.movement), stock.availableCount);
+      }
 
-      await tx.stock.update({
+      const nextAvailableVolume = Math.max(0, stock.availableVolume + command.movement * 450);
+
+      await tx.stockView.update({
         where: { id: command.stockId },
         data: {
-          quantityA: stock.getQuantityA().getValue(),
-          quantityB: stock.getQuantityB().getValue(),
-          quantityAB: stock.getQuantityAB().getValue(),
-          quantityO: stock.getQuantityO().getValue(),
-          updatedAt: command.timestamp,
+          availableCount: nextAvailableCount,
+          availableVolume: nextAvailableVolume,
+          totalVolume: nextAvailableVolume,
+          lastUpdated: command.timestamp,
         },
       });
 
-      await tx.stockMovement.create({
+      const user = await tx.user.findFirst({
+        where: { companyId: stock.companyId, isActive: true },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (!user) {
+        throw new Error(`No active user found for company ${stock.companyId}`);
+      }
+
+      await tx.movement.create({
         data: {
           id: command.movementId,
-          stockId: command.stockId,
-          quantityBefore,
-          movement: command.movement,
-          quantityAfter,
-          actionBy: command.actionBy,
+          companyId: stock.companyId,
+          userId: user.id,
+          type: command.movement >= 0 ? 'ENTRY_DONATION' : 'EXIT_TRANSFUSION',
+          bloodType: stock.bloodType,
+          quantity: Math.abs(command.movement),
+          origin: command.actionBy,
           notes: command.notes,
           createdAt: command.timestamp,
         },
       });
 
       return {
-        stockId: stock.getId().getValue(),
-        companyId: stock.getCompanyId().getValue(),
-        bloodType: stock.getBloodType().getValue(),
-        quantityABefore: raw.quantityA,
-        quantityBBefore: raw.quantityB,
-        quantityABBefore: raw.quantityAB,
-        quantityOBefore: raw.quantityO,
-        quantityAAfter: stock.getQuantityA().getValue(),
-        quantityBAfter: stock.getQuantityB().getValue(),
-        quantityABAfter: stock.getQuantityAB().getValue(),
-        quantityOAfter: stock.getQuantityO().getValue(),
+        stockId: stock.id,
+        companyId: stock.companyId,
+        bloodType: this.prismaToBloodType(stock.bloodType),
+        ...this.toAdjustResultQuantities(stock.availableCount, nextAvailableCount, stock.bloodType),
         timestamp: command.timestamp,
       };
     });
   }
 
   async save(stock: StockItem): Promise<void> {
-    const raw = this.mapper.toPersistence(stock);
-
-    await this.prisma.stock.upsert({
-      where: { id: stock.getId().getValue() },
-      update: {
-        quantityA: stock.getQuantityA().getValue(),
-        quantityB: stock.getQuantityB().getValue(),
-        quantityAB: stock.getQuantityAB().getValue(),
-        quantityO: stock.getQuantityO().getValue(),
-        updatedAt: new Date(),
-      },
-      create: raw,
-    });
+    // V3 Migration: StockView is denormalized, derived from BloodBag table
+    // No direct manipulation here - handled via Movement and BloodBag creation
+    // This is now a no-op during the transition phase
   }
 
   private prismaToBloodType(prismaType: string): string {
@@ -177,5 +171,34 @@ export class StockPrismaRepository implements StockRepositoryPort {
     if (type === 'AB+' || type === 'AB-') return stock.getQuantityAB();
     if (type === 'O+' || type === 'O-') return stock.getQuantityO();
     throw new Error(`Unknown blood type: ${type}`);
+  }
+
+  private toQuantities(quantity: number, bloodType: string): Pick<StockReadModel, 'quantityA' | 'quantityB' | 'quantityAB' | 'quantityO'> {
+    if (bloodType.startsWith('A_')) {
+      return { quantityA: quantity, quantityB: 0, quantityAB: 0, quantityO: 0 };
+    }
+    if (bloodType.startsWith('B_')) {
+      return { quantityA: 0, quantityB: quantity, quantityAB: 0, quantityO: 0 };
+    }
+    if (bloodType.startsWith('AB_')) {
+      return { quantityA: 0, quantityB: 0, quantityAB: quantity, quantityO: 0 };
+    }
+    return { quantityA: 0, quantityB: 0, quantityAB: 0, quantityO: quantity };
+  }
+
+  private toAdjustResultQuantities(before: number, after: number, bloodType: string): Omit<AtomicAdjustStockResult, 'stockId' | 'companyId' | 'bloodType' | 'timestamp'> {
+    const beforeQuantities = this.toQuantities(before, bloodType);
+    const afterQuantities = this.toQuantities(after, bloodType);
+
+    return {
+      quantityABefore: beforeQuantities.quantityA,
+      quantityBBefore: beforeQuantities.quantityB,
+      quantityABBefore: beforeQuantities.quantityAB,
+      quantityOBefore: beforeQuantities.quantityO,
+      quantityAAfter: afterQuantities.quantityA,
+      quantityBAfter: afterQuantities.quantityB,
+      quantityABAfter: afterQuantities.quantityAB,
+      quantityOAfter: afterQuantities.quantityO,
+    };
   }
 }

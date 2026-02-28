@@ -1,12 +1,12 @@
 import { EntityId } from '../../src/domain/value-objects/entity-id.vo';
 import { InsufficientStockError } from '../../src/domain/errors/insufficient-stock.error';
-import { AdjustStockService } from '../../src/application/stock/use-cases/adjust-stock/adjust-stock.service';
+import { AdjustStockUseCaseHandler } from '../../src/application/stock/use-cases/adjust-stock/adjust-stock.use-case';
 import { AdjustStockCommand } from '../../src/application/stock/use-cases';
 import { StockRepositoryPort } from '../../src/application/stock/ports/out/stock-repository.port';
 import { IdGeneratorPort } from '../../src/application/stock/ports/out/id-generator.port';
 import { DateProviderPort } from '../../src/application/stock/ports/out/date-provider.port';
 
-describe('AdjustStockService', () => {
+describe('AdjustStockUseCaseHandler', () => {
   const stockId = new EntityId();
   const companyId = new EntityId();
 
@@ -48,7 +48,7 @@ describe('AdjustStockService', () => {
       timestamp: new Date('2026-02-27T10:30:00.000Z'),
     });
 
-    const service = new AdjustStockService(
+    const service = new AdjustStockUseCaseHandler(
       stockRepositoryMock,
       idGeneratorMock,
       dateProviderMock,
@@ -65,7 +65,7 @@ describe('AdjustStockService', () => {
   it('should throw error when stock does not exist', async () => {
     stockRepositoryMock.adjustAtomically.mockRejectedValue(new Error('Stock not found with ID: non-existent-id'));
 
-    const service = new AdjustStockService(
+    const service = new AdjustStockUseCaseHandler(
       stockRepositoryMock,
       idGeneratorMock,
       dateProviderMock,
@@ -82,7 +82,7 @@ describe('AdjustStockService', () => {
       new InsufficientStockError(stockId.getValue(), 5, 1),
     );
 
-    const service = new AdjustStockService(
+    const service = new AdjustStockUseCaseHandler(
       stockRepositoryMock,
       idGeneratorMock,
       dateProviderMock,
