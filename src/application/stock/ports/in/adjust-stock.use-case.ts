@@ -1,28 +1,5 @@
-export class AdjustStockCommand {
-  constructor(
-    public readonly stockId: string,
-    public readonly movement: number,
-    public readonly actionBy: string,
-    public readonly notes: string,
-  ) {}
-}
-
-export class AdjustStockResult {
-  constructor(
-    public readonly stockId: string,
-    public readonly companyId: string,
-    public readonly bloodType: string,
-    public readonly quantityABefore: number,
-    public readonly quantityBBefore: number,
-    public readonly quantityABBefore: number,
-    public readonly quantityOBefore: number,
-    public readonly quantityAAfter: number,
-    public readonly quantityBAfter: number,
-    public readonly quantityABAfter: number,
-    public readonly quantityOAfter: number,
-    public readonly timestamp: Date,
-  ) {}
-}
+import { AdjustStockCommand } from '@application/stock/use-cases/adjust-stock/adjust-stock.command';
+import { AdjustStockResult } from '@application/stock/use-cases/adjust-stock/adjust-stock.result';
 
 export interface AdjustStockUseCase {
   execute(command: AdjustStockCommand): Promise<AdjustStockResult>;

@@ -22,5 +22,6 @@
       "@adapters": ["src/adapters"],
       "@adapters/*": ["src/adapters/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist", "src/examples"]
 }

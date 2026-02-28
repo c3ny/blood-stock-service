@@ -1,0 +1,118 @@
+name: Reusable Project CI
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: Project language/runtime (node | java-gradle | java-maven)
+        required: true
+        type: string
+      working-directory:
+        description: Project directory
+        required: false
+        default: .
+        type: string
+      node-version:
+        description: Node.js version when language=node
+        required: false
+        default: '20'
+        type: string
+      java-version:
+        description: Java version when language=java-*
+        required: false
+        default: '17'
+        type: string
+      install-command:
+        description: Custom install command
+        required: false
+        default: ''
+        type: string
+      lint-command:
+        description: Command for lint/type-check
+        required: false
+        default: ''
+        type: string
+      test-command:
+        description: Command for tests
+        required: false
+        default: ''
+        type: string
+      build-command:
+        description: Command for build/package
+        required: false
+        default: ''
+        type: string
+      docker-build:
+        description: Run docker build smoke test
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Reusable CI (${{ inputs.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: ${{ inputs.language == 'node' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Setup Java
+        if: ${{ inputs.language == 'java-gradle' || inputs.language == 'java-maven' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          cache: ${{ inputs.language == 'java-maven' && 'maven' || 'gradle' }}
+
+      - name: Setup Gradle
+        if: ${{ inputs.language == 'java-gradle' }}
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        if: ${{ inputs.language == 'java-gradle' && hashFiles(format('{0}/gradlew', inputs.working-directory)) != '' }}
+        run: chmod +x gradlew
+
+      - name: Install dependencies
+        run: |
+          if [ -n "${{ inputs.install-command }}" ]; then
+            ${{ inputs.install-command }}
+          elif [ "${{ inputs.language }}" = "node" ]; then
+            npm ci --legacy-peer-deps
+          elif [ "${{ inputs.language }}" = "java-maven" ]; then
+            mvn -B -DskipTests dependency:resolve
+          else
+            ./gradlew dependencies --no-daemon
+          fi
+
+      - name: Lint / static checks
+        if: ${{ inputs.lint-command != '' }}
+        run: ${{ inputs.lint-command }}
+
+      - name: Tests
+        if: ${{ inputs.test-command != '' }}
+        run: ${{ inputs.test-command }}
+
+      - name: Build
+        if: ${{ inputs.build-command != '' }}
+        run: ${{ inputs.build-command }}
+
+      - name: Docker smoke build
+        if: ${{ inputs.docker-build && hashFiles(format('{0}/Dockerfile', inputs.working-directory)) != '' }}
+        run: docker build -t reusable-ci-${{ github.run_id }} .

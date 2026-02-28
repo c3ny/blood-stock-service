@@ -1,3 +1,24 @@
+// ============================================================
+// BLOOD STOCK SERVICE - REFACTORED SCHEMA
+// ============================================================
+// Version: 2.0.0
+// Date: 28 de fevereiro de 2026
+// 
+// Este schema foi completamente refatorado para:
+// - Rastreabilidade individual de bolsas de sangue
+// - Controle de validade por bolsa (FIFO)
+// - Auditoria completa de movimentações
+// - Suporte multi-tenant (múltiplos hemocentros)
+// - Integridade referencial com FKs
+// - Performance otimizada com índices estratégicos
+//
+// BREAKING CHANGES:
+// - Stock não é mais tabela, é view materializada (StockView)
+// - Batch agora relaciona-se 1:N com BloodBag
+// - Movimentações agora tipadas com enum MovementType
+// - Company/User são entidades completas
+// ============================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,6 +28,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+// ENUMS
+// ============================================================
+
+/// Tipos sanguíneos suportados
 enum BloodType {
   A_POS
   A_NEG
@@ -16,35 +42,340 @@ enum BloodType {
   AB_NEG
   O_POS
   O_NEG
+
+  @@map("blood_type_enum")
 }
 
-model Stock {
-  id          String          @id @db.Uuid
-  companyId   String          @db.Uuid @map("company_id")
-  bloodType   BloodType       @map("blood_type")
-  quantityA   Int             @map("quantity_a")
-  quantityB   Int             @map("quantity_b")
-  quantityAB  Int             @map("quantity_ab")
-  quantityO   Int             @map("quantity_o")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  movements   StockMovement[]
+/// Status de uma bolsa individual de sangue
+enum BloodBagStatus {
+  AVAILABLE   // Disponível para uso (default)
+  RESERVED    // Reservada para paciente específico
+  USED        // Utilizada (transfusão realizada)
+  EXPIRED     // Vencida (passou da data de validade)
+  DISCARDED   // Descartada (problema de qualidade)
+  TRANSFERRED // Transferida para outro hemocentro
 
-  @@map("stock")
+  @@map("blood_bag_status_enum")
 }
 
-model StockMovement {
-  id             String   @id @db.Uuid
-  stockId        String   @db.Uuid @map("stock_id")
-  movement       Int
-  quantityBefore Int      @map("quantity_before")
-  quantityAfter  Int      @map("quantity_after")
-  actionBy       String   @map("action_by")
-  notes          String
-  createdAt      DateTime @default(now()) @map("created_at")
+/// Tipo de movimentação de estoque
+enum MovementType {
+  ENTRY_DONATION     // Entrada: Doação recebida
+  ENTRY_TRANSFER_IN  // Entrada: Transferência de outro hemocentro
+  ENTRY_PURCHASE     // Entrada: Compra de fornecedor
+  EXIT_TRANSFUSION   // Saída: Transfusão em paciente
+  EXIT_TRANSFER_OUT  // Saída: Transferência para outro hemocentro
+  EXIT_DISCARD       // Saída: Descarte por problema de qualidade
+  EXIT_EXPIRED       // Saída: Descarte por vencimento
+  EXIT_RESEARCH      // Saída: Uso em pesquisa (com aprovação)
+  ADJUSTMENT         // Ajuste de estoque (correção/inventário)
 
-  stock Stock @relation(fields: [stockId], references: [id])
+  @@map("movement_type_enum")
+}
 
-  @@index([stockId])
-  @@map("bloodstock_movement")
+/// Tipos de usuários do sistema
+enum UserRole {
+  ADMIN       // Administrador geral
+  MANAGER     // Gerente do hemocentro
+  TECHNICIAN  // Técnico de laboratório
+  DOCTOR      // Médico
+  NURSE       // Enfermeiro
+  AUDITOR     // Auditor (somente leitura)
+
+  @@map("user_role_enum")
+}
+
+/// Tipos de alertas de estoque
+enum AlertType {
+  LOW_STOCK       // Estoque baixo para tipo sanguíneo
+  EXPIRING_SOON   // Bolsas vencendo em breve (< 7 dias)
+  EXPIRED         // Bolsas vencidas não descartadas
+  CRITICAL_STOCK  // Estoque crítico (< 3 unidades)
+
+  @@map("alert_type_enum")
+}
+
+// ============================================================
+// CORE ENTITIES
+// ============================================================
+
+/// Representa um hemocentro/empresa
+model Company {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(255)
+  cnpj        String   @unique @db.VarChar(18) // 00.000.000/0000-00
+  address     String?  @db.Text
+  phone       String?  @db.VarChar(20)
+  email       String?  @db.VarChar(255)
+  city        String?  @db.VarChar(100)
+  state       String?  @db.VarChar(2) // UF
+  zipCode     String?  @db.VarChar(10) @map("zip_code")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  batches    Batch[]
+  users      User[]
+  stockViews StockView[]
+  movements  Movement[]
+  alerts     StockAlert[]
+
+  @@index([cnpj])
+  @@index([isActive])
+  @@index([city, state])
+  @@map("company")
+}
+
+/// Representa um usuário do sistema
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid @map("company_id")
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255) // Hash bcrypt
+  role      UserRole
+  cpf       String?  @unique @db.VarChar(14) // 000.000.000-00
+  phone     String?  @db.VarChar(20)
+  isActive  Boolean  @default(true) @map("is_active")
+  lastLogin DateTime? @map("last_login")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements Movement[]
+
+  @@index([companyId])
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@map("user")
+}
+
+/// Representa um lote de sangue recebido
+model Batch {
+  id             String    @id @default(uuid()) @db.Uuid
+  companyId      String    @db.Uuid @map("company_id")
+  code           String    @db.VarChar(100) // Código único do lote (ex: LOTE-2026-001)
+  bloodType      BloodType @map("blood_type")
+  receivedAt     DateTime  @map("received_at") // Data/hora de recebimento
+  expiresAt      DateTime  @map("expires_at") // Data de validade do lote
+  donorReference String?   @db.VarChar(255) @map("donor_reference") // Referência do doador/campanha
+  sourceLocation String?   @db.VarChar(255) @map("source_location") // Origem: hospital, campanha, etc.
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bloodBags BloodBag[]
+
+  // Constraints
+  @@unique([companyId, code], name: "unique_batch_code_per_company")
+  @@index([companyId])
+  @@index([bloodType])
+  @@index([expiresAt]) // Crítico para alertas de vencimento
+  @@index([receivedAt])
+  @@index([companyId, bloodType])
+  @@map("batch")
+}
+
+/// Representa uma bolsa individual de sangue
+model BloodBag {
+  id             String         @id @default(uuid()) @db.Uuid
+  batchId        String         @db.Uuid @map("batch_id")
+  bagCode        String         @unique @db.VarChar(100) @map("bag_code") // Código único da bolsa
+  bloodType      BloodType      @map("blood_type") // Denormalizado do Batch para queries rápidas
+  volume         Int            @default(450) // Volume em mL (padrão 450mL)
+  status         BloodBagStatus @default(AVAILABLE)
+  expiresAt      DateTime       @map("expires_at") // Data de validade específica da bolsa
+  
+  // Campos de controle
+  reservedFor    String?        @db.Uuid @map("reserved_for") // ID do paciente se reservado
+  reservedAt     DateTime?      @map("reserved_at")
+  reservedBy     String?        @db.Uuid @map("reserved_by") // User ID que reservou
+  
+  usedAt         DateTime?      @map("used_at")
+  usedBy         String?        @db.Uuid @map("used_by") // User ID que utilizou
+  usedFor        String?        @db.Uuid @map("used_for") // ID do paciente que recebeu
+  
+  discardedAt    DateTime?      @map("discarded_at")
+  discardedBy    String?        @db.Uuid @map("discarded_by") // User ID que descartou
+  discardReason  String?        @db.Text @map("discard_reason")
+  
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  batch     Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  movements Movement[]
+
+  @@index([batchId])
+  @@index([bloodType])
+  @@index([status])
+  @@index([expiresAt]) // Crítico para FIFO e alertas
+  @@index([reservedFor])
+  @@index([status, expiresAt]) // Composite para queries FIFO
+  @@index([batchId, status])
+  @@map("blood_bag")
+}
+
+/// Representa uma movimentação de estoque (entrada/saída)
+model Movement {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid @map("company_id")
+  bloodBagId  String?      @db.Uuid @map("blood_bag_id") // Null para ajustes bulk
+  userId      String       @db.Uuid @map("user_id")
+  type        MovementType
+  bloodType   BloodType    @map("blood_type") // Denormalizado para queries rápidas
+  quantity    Int          @default(1) // Normalmente 1 bolsa, mas pode ser bulk
+  origin      String?      @db.VarChar(255) // Origem: doador ID, campanha, hemocentro origem
+  destination String?      @db.VarChar(255) // Destino: paciente ID, hemocentro destino
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bloodBag BloodBag? @relation(fields: [bloodBagId], references: [id], onDelete: SetNull)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([bloodBagId])
+  @@index([userId])
+  @@index([type])
+  @@index([bloodType])
+  @@index([createdAt])
+  @@index([companyId, bloodType, createdAt]) // Composite para relatórios
+  @@index([companyId, type, createdAt]) // Composite para análises
+  @@map("movement")
+}
+
+/// Visão materializada de estoque por tipo sanguíneo
+/// Atualizada automaticamente ou via trigger/job
+model StockView {
+  id                  String    @id @default(uuid()) @db.Uuid
+  companyId           String    @db.Uuid @map("company_id")
+  bloodType           BloodType @map("blood_type")
+  
+  // Contadores
+  availableCount      Int       @default(0) @map("available_count") // Bolsas disponíveis
+  reservedCount       Int       @default(0) @map("reserved_count") // Bolsas reservadas
+  usedCount           Int       @default(0) @map("used_count") // Bolsas utilizadas (histórico)
+  expiredCount        Int       @default(0) @map("expired_count") // Bolsas vencidas
+  discardedCount      Int       @default(0) @map("discarded_count") // Bolsas descartadas
+  expiringSoonCount   Int       @default(0) @map("expiring_soon_count") // Vencendo em < 7 dias
+  
+  // Volumes
+  totalVolume         Int       @default(0) @map("total_volume") // Volume total em mL
+  availableVolume     Int       @default(0) @map("available_volume") // Volume disponível em mL
+  
+  // Metadados
+  lastUpdated         DateTime  @default(now()) @map("last_updated")
+  oldestExpirationDate DateTime? @map("oldest_expiration_date") // Data da bolsa mais antiga
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Constraints: 1 registro por empresa + tipo sanguíneo
+  @@unique([companyId, bloodType], name: "unique_stock_per_company_blood_type")
+  @@index([companyId])
+  @@index([bloodType])
+  @@index([availableCount]) // Para alertas de estoque baixo
+  @@index([expiringSoonCount]) // Para alertas de vencimento
+  @@map("stock_view")
+}
+
+/// Alertas de estoque (baixo, vencimento, etc.)
+model StockAlert {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @db.Uuid @map("company_id")
+  bloodType   BloodType @map("blood_type")
+  alertType   AlertType @map("alert_type")
+  severity    String    @db.VarChar(20) // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  message     String    @db.Text
+  threshold   Int?      // Valor do threshold que disparou alerta
+  currentValue Int?     @map("current_value") // Valor atual
+  isResolved  Boolean   @default(false) @map("is_resolved")
+  resolvedAt  DateTime? @map("resolved_at")
+  resolvedBy  String?   @db.Uuid @map("resolved_by") // User ID
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([bloodType])
+  @@index([alertType])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([companyId, isResolved]) // Para dashboard
+  @@map("stock_alert")
+}
+
+// ============================================================
+// VIEWS (PostgreSQL - criar após migrations)
+// ============================================================
+
+// -- View para estoque em tempo real (alternativa a StockView)
+// CREATE OR REPLACE VIEW stock_summary AS
+// SELECT 
+//   bb.batch_id,
+//   b.company_id,
+//   bb.blood_type,
+//   COUNT(*) FILTER (WHERE bb.status = 'AVAILABLE' AND bb.expires_at > NOW()) AS available_count,
+//   COUNT(*) FILTER (WHERE bb.status = 'RESERVED') AS reserved_count,
+//   COUNT(*) FILTER (WHERE bb.status = 'USED') AS used_count,
+//   COUNT(*) FILTER (WHERE bb.status = 'EXPIRED') AS expired_count,
+//   COUNT(*) FILTER (WHERE bb.status = 'DISCARDED') AS discarded_count,
+//   COUNT(*) FILTER (WHERE bb.status = 'AVAILABLE' AND bb.expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days') AS expiring_soon_count,
+//   SUM(bb.volume) AS total_volume,
+//   SUM(bb.volume) FILTER (WHERE bb.status = 'AVAILABLE') AS available_volume,
+//   MIN(bb.expires_at) FILTER (WHERE bb.status = 'AVAILABLE') AS oldest_expiration_date
+// FROM blood_bag bb
+// JOIN batch b ON bb.batch_id = b.id
+// GROUP BY bb.batch_id, b.company_id, bb.blood_type;
+
+// ============================================================
+// TRIGGERS (PostgreSQL - criar após migrations)
+// ============================================================
+
+// -- Trigger para atualizar StockView automaticamente
+// CREATE OR REPLACE FUNCTION update_stock_view()
+// RETURNS TRIGGER AS $$
+// BEGIN
+//   -- Atualizar contadores quando status de BloodBag muda
+//   -- (implementação completa em migration)
+//   RETURN NEW;
+// END;
+// $$ LANGUAGE plpgsql;
+//
+// CREATE TRIGGER blood_bag_status_change
+// AFTER UPDATE OF status ON blood_bag
+// FOR EACH ROW
+// EXECUTE FUNCTION update_stock_view();
+
+// ============================================================
+// AUDIT LOG (FUTURO - Event Sourcing)
+// ============================================================
+
+/// Log de eventos para auditoria avançada (futuro)
+model EventLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  aggregateId   String   @db.Uuid @map("aggregate_id") // BloodBag ID, Movement ID, etc.
+  aggregateType String   @db.VarChar(50) @map("aggregate_type") // "BloodBag" | "Movement" | etc.
+  eventType     String   @db.VarChar(100) @map("event_type") // "BagCreated" | "BagReserved" | etc.
+  eventData     Json     @map("event_data") // Snapshot completo do evento
+  userId        String?  @db.Uuid @map("user_id")
+  ipAddress     String?  @db.VarChar(45) @map("ip_address") // IPv6 support
+  userAgent     String?  @db.Text @map("user_agent")
+  timestamp     DateTime @default(now())
+
+  @@index([aggregateId])
+  @@index([aggregateType])
+  @@index([eventType])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("event_log")
 }

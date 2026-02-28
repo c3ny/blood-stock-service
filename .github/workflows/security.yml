@@ -2,105 +2,158 @@ name: Security Scan
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, master, develop]
   schedule:
-    # Executar toda segunda-feira às 9h UTC
     - cron: '0 9 * * 1'
 
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  dependency-check:
-    name: Dependency Security Scan
+  node-audit:
+    name: Node dependency audit
+    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: ☕ Set up JDK 17
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit (prod deps)
+        run: npm audit --omit=dev --audit-level=high
+
+  java-dependency-check:
+    name: Java dependency scan
+    if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
+          cache: gradle
 
-      - name: 🐘 Setup Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: 🔧 Grant execute permission for gradlew
+      - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 🔍 Run dependency check
-        run: ./gradlew dependencyCheckAnalyze --no-daemon || true
+      - name: Run dependency check
+        run: ./gradlew dependencyCheckAnalyze --no-daemon
 
-      - name: 📄 Upload dependency check report
+      - name: Upload dependency-check report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
+          name: java-dependency-check-report
           path: build/reports/dependency-check-report.html
+          if-no-files-found: ignore
 
-  codeql-analysis:
-    name: CodeQL Security Analysis
+  codeql-javascript:
+    name: CodeQL (JavaScript/TypeScript)
+    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     permissions:
       actions: read
       contents: read
       security-events: write
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+
+  codeql-java:
+    name: CodeQL (Java)
+    if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts', '**/pom.xml') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java
 
-      - name: ☕ Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-      - name: 🔧 Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: 🏗️ Build project
-        run: ./gradlew build -x test --no-daemon
-
-      - name: 🔍 Perform CodeQL Analysis
+      - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
 
   secret-scan:
-    name: Secret Scanning
+    name: Secret scanning (TruffleHog)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 🔍 Debug GitHub event info (debug)
-        run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "before=${{ github.event.before }}"
-          echo "sha=${{ github.sha }}"
-
-      # Incremental scan for push / pull_request events
-      - name: 🔐 TruffleHog Secret Scan (incremental)
-        if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.event.before != github.sha }}
-        uses: trufflesecurity/trufflehog@main
+      - name: TruffleHog incremental scan (push)
+        if: ${{ github.event_name == 'push' && github.event.before != github.sha }}
+        uses: trufflesecurity/trufflehog@v3
         with:
           path: ./
           base: ${{ github.event.before }}
           head: ${{ github.sha }}
 
-      # Full repository scan for scheduled runs
-      - name: 🔐 TruffleHog Secret Scan (full - schedule)
+      - name: TruffleHog incremental scan (pull_request)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: ./
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+
+      - name: TruffleHog full scan (schedule)
         if: ${{ github.event_name == 'schedule' }}
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3
         with:
           path: ./
 
