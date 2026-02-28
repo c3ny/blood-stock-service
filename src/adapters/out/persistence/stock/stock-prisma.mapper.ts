@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { StockView as PrismaStockView } from '@prisma/client';
 import { StockItem, EntityId, BloodType, Quantity } from '@domain';
 
 @Injectable()

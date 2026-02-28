@@ -76,7 +76,7 @@ export class StockPrismaRepository implements StockRepositoryPort {
     ]);
 
     return {
-      items: items.map((raw) => ({
+      items: items.map((raw: any) => ({
         id: raw.id,
         companyId: raw.companyId,
         bloodType: this.prismaToBloodType(raw.bloodType),
@@ -91,7 +91,7 @@ export class StockPrismaRepository implements StockRepositoryPort {
   }
 
   async adjustAtomically(command: AtomicAdjustStockCommand): Promise<AtomicAdjustStockResult> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: any) => {
       const stock = await tx.stockView.findUnique({
         where: { id: command.stockId },
       });
