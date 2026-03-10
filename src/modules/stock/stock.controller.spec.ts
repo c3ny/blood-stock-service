@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
 
+/**
+ * Suite de testes unitários do StockController,
+ * validando mapeamentos de contrato legado e respostas HTTP esperadas.
+ */
 describe('StockController', () => {
   let controller: StockController;
 

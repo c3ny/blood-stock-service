@@ -3,6 +3,10 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+/**
+ * Inicializa a aplicação NestJS, configura validação global,
+ * CORS, documentação Swagger e inicia o servidor HTTP.
+ */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 

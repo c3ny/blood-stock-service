@@ -9,178 +9,156 @@ import {
   Post,
   Query,
   Res,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { BatchEntity } from '../batch/entities/batch.entity';
-import { BatchEntryRequestDto } from './dto/batch-entry-request.dto';
-import { BatchExitBulkRequestDto } from './dto/batch-exit-bulk-request.dto';
-import { BatchResponseDto } from './dto/batch-response.dto';
-import { BloodstockResponseDto } from './dto/bloodstock-response.dto';
-import { BloodstockMovementRequestDto } from './dto/bloodstock-movement-request.dto';
-import { CreateBloodstockDto } from './dto/create-bloodstock.dto';
+import { BatchEntryRequestDto } from './dto/request/batch-entry-request.dto';
+import { BatchExitRequestDto } from './dto/request/batch-exit-request.dto';
+import { BatchResponseDto } from './dto/response/batch-response.dto';
 import { BloodstockMovementEntity } from './entities/bloodstock-movement.entity';
 import { BloodstockEntity } from './entities/bloodstock.entity';
 import { StockService } from './stock.service';
 
+/**
+ * Controller HTTP do módulo de estoque.
+ * Expõe endpoints compatíveis com o contrato legado da API Java.
+ */
 @ApiTags('📦 Estoque de Sangue')
 @Controller('api/stock')
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 
-  @ApiOperation({ summary: 'Criar registro de estoque vinculado a uma empresa' })
-  @Post('/company/:companyId')
-  createWithCompany(
-    @Body() payload: CreateBloodstockDto,
+  /**
+   * Lista todos os itens de estoque do sistema.
+   */
+  @ApiOperation({ summary: 'Listar todos os lotes da empresa' })
+  @Get('/company/:companyId')
+  findByCompany(
     @Param('companyId') companyId: string,
-  ): Promise<BloodstockResponseDto> {
+  ): Promise<BatchResponseDto[]> {
     return this.stockService
-      .save(payload, companyId)
-      .then((stock) => this.mapStockToLegacyDto(stock));
-  }
-
-  @ApiOperation({ summary: 'Listar estoque global' })
-  @Get()
-  listAll(): Promise<BloodstockResponseDto[]> {
-    return this.stockService
-      .listAll()
+      .findByCompany(companyId)
       .then((stocks) => stocks.map((stock) => this.mapStockToLegacyDto(stock)));
   }
 
+  /**
+   * Atualiza a quantidade de um item de estoque por ID.
+   */
   @ApiOperation({ summary: 'Atualizar quantidade de um item do estoque' })
-  @Put('/:id')
+  @Put('/:userId/:companyId/:batchCode')
   updateQuantity(
-    @Param('id') id: string,
+    @Param('batchCode') batchCode: string,
+    @Param('userId') userId: string,
     @Query('quantity', ParseIntPipe) quantity: number,
-  ): Promise<BloodstockResponseDto> {
+  ): Promise<BatchResponseDto> {
     return this.stockService
-      .updateQuantity(id, quantity)
+      .updateQuantity(userId, batchCode, quantity)
       .then((stock) => this.mapStockToLegacyDto(stock));
   }
 
-  @ApiOperation({ summary: 'Movimentação de estoque' })
-  @Post('/company/:companyId/movement')
-  async moveStock(
-    @Param('companyId') companyId: string,
-    @Body() dto: BloodstockMovementRequestDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    try {
-      const updated = await this.stockService.updateQuantity(dto.bloodstockId, dto.quantity);
-      res.status(HttpStatus.OK).json(this.mapStockToLegacyDto(updated));
-    } catch {
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
-    }
-  }
-
+  /**
+   * Processa entrada em lote validando o payload e retornando o lote criado/atualizado.
+   */
   @ApiOperation({ summary: 'Entrada de estoque por lote' })
-  @Post('/company/:companyId/batch-entry')
+  @Post('/:userId/:companyId/batchEntry')
+  @HttpCode(HttpStatus.CREATED)
   async batchEntry(
     @Param('companyId') companyId: string,
+    @Param('userId') userId: string,
     @Body() dto: BatchEntryRequestDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    const fieldErrors = dto.validateQuantities();
-    if (fieldErrors.length > 0) {
-      res.status(HttpStatus.BAD_REQUEST).json(fieldErrors);
-      return;
-    }
+  ): Promise<BatchResponseDto[]> {
 
-    try {
-      const newBatch = await this.stockService.processBatchEntry(companyId, dto);
-      res.status(HttpStatus.CREATED).json([this.mapToDto(newBatch)]);
-    } catch {
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
-    }
+    const newBatch = await this.stockService.processBatchEntry(userId, companyId, dto);
+    return [this.mapToDto(newBatch)];
+
   }
 
-  @ApiOperation({ summary: 'Saída em lote' })
-  @Post('/company/:companyId/batch-exit/bulk')
+  /**
+   * Processa saída em lote e retorna a posição atual de estoque da empresa.
+   */
+  @ApiOperation({ summary: 'Saída de estoque por lote' })
+  @Post('/:userId/:companyId/:batchCode/batchExit')
+  @HttpCode(HttpStatus.OK)
   async processBulkExit(
-    @Param('companyId') companyId: string,
-    @Body() dto: BatchExitBulkRequestDto,
-    @Res() res: Response,
-  ): Promise<void> {
-    try {
-      await this.stockService.processBulkBatchExit(companyId, dto);
-      const companyStock = await this.stockService.findByCompany(companyId);
-      res
-        .status(HttpStatus.OK)
-        .json(companyStock.map((stock) => this.mapStockToLegacyDto(stock)));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao processar saída em lote';
-      res.status(HttpStatus.BAD_REQUEST).json(message);
-    }
-  }
+  @Param('companyId') companyId: string,
+  @Param('userId') userId: string,
+  @Body() dto: BatchExitRequestDto,
+): Promise<BatchResponseDto[]> {
+  await this.stockService.processBatchExit(userId, companyId, dto);
+  const companyStock = await this.stockService.findByCompany(companyId);
+  return companyStock.map((stock) => this.mapStockToLegacyDto(stock));
+  // Se erro → GlobalExceptionFilter pega automaticamente
+}
 
-  @ApiOperation({ summary: 'Obter estoque de uma empresa' })
-  @Get('/company/:companyId')
-  async getStockByCompany(
-    @Param('companyId') companyId: string,
-    @Res() res: Response,
-  ): Promise<void> {
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        companyId,
-      );
-
-    if (!isUuid) {
-      res.status(HttpStatus.BAD_REQUEST).json([]);
-      return;
-    }
-
-    const result = await this.stockService.findByCompany(companyId);
-    res
-      .status(HttpStatus.OK)
-      .json(result.map((stock) => this.mapStockToLegacyDto(stock)));
-  }
-
+  /**
+   * Retorna o histórico de movimentações de um item de estoque.
+   */
   @ApiOperation({ summary: 'Histórico de movimentações' })
-  @Get('/:bloodstockId/history')
-  getHistory(@Param('bloodstockId') bloodstockId: string): Promise<BloodstockMovementEntity[]> {
-    return this.stockService.getHistoryByBloodstockId(bloodstockId);
+  @Get('/:batchCode/history')
+  getHistory(@Param('batchCode') batchCode: string): Promise<BloodstockMovementEntity[]> {
+    return this.stockService.getHistoryByBatchCode(batchCode);
   }
 
+  /**
+   * Gera relatório CSV com os itens de estoque da empresa.
+   */
   @ApiOperation({ summary: 'Gerar relatório CSV' })
-  @Get('/report/:companyId')
+  @Get('/:companyId/report')
   async generateReport(
     @Param('companyId') companyId: string,
     @Res() res: Response,
   ): Promise<void> {
     const stockList = await this.stockService.findByCompany(companyId);
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="bloodstock_report.csv"');
-    res.write('Blood Type,Quantity,Date\n');
+    const csvContent = [
+      'Tipo Sanguíneo,Quantidade,Data de Entrada,Data de Saída',
+      ...stockList.map(
+        (stock) =>
+          `${stock.bloodType},${stock.quantity},${stock.entryDate ?? ''},${stock.exitDate ?? ''}`,
+      ),
+    ].join('\n');
 
-    for (const item of stockList) {
-      const line = `${item.bloodType},${item.quantity},${item.updateDate ?? ''}`;
-      res.write(`${line}\n`);
-    }
-
-    res.end();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="stock_report.csv"');
+    res.status(HttpStatus.OK).send(csvContent);
   }
 
+  /**
+   * Converte entidade de lote para DTO de resposta da API.
+   */
   private mapToDto(batch: BatchEntity): BatchResponseDto {
     return {
       id: batch.id,
       batchCode: batch.batchCode,
       entryDate: batch.entryDate ?? null,
+      exitDate: batch.exitDate ?? null,
       bloodDetails:
         batch.bloodDetails?.map((detail) => ({
           id: detail.id,
           bloodType: detail.bloodType,
           quantity: detail.quantity,
-        })) ?? [],
+        })) ?? "Sem detalhes",
     };
   }
 
-  private mapStockToLegacyDto(stock: BloodstockEntity): BloodstockResponseDto {
+  /**
+   * Converte entidade de estoque para formato legado em snake_case.
+   */
+  private mapStockToLegacyDto(stock: BloodstockEntity): BatchResponseDto {
     return {
       id: stock.id,
-      blood_type: stock.bloodType,
-      update_date: stock.updateDate ?? null,
-      quantity: stock.quantity,
+      batchCode: stock.batchCode ?? '',
+      entryDate: stock.entryDate ?? null,
+      exitDate: stock.exitDate ?? null,
+      bloodDetails: [
+        {
+          id: stock.id,
+          bloodType: stock.bloodType,
+          quantity: stock.quantity,
+        },
+      ],
     };
   }
 }

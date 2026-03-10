@@ -8,14 +8,27 @@ import {
 import { Response } from 'express';
 import { IllegalArgumentException } from '../exceptions/illegal-argument.exception';
 import { NoSuchElementException } from '../exceptions/no-such-element.exception';
+import { InsufficientStockException } from '../../../stock/exceptions/insufficient-stock.exception';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  /**
+   * Converte exceções de domínio e HTTP em respostas padronizadas
+   * para manter compatibilidade com o contrato legado.
+   */
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
 
     if (exception instanceof IllegalArgumentException) {
       response.status(HttpStatus.BAD_REQUEST).json({
+        message: exception.message,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    if (exception instanceof InsufficientStockException) {
+      response.status(HttpStatus.CONFLICT).json({
         message: exception.message,
         timestamp: new Date().toISOString(),
       });

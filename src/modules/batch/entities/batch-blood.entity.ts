@@ -2,6 +2,9 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 't
 import { BatchEntity } from './batch.entity';
 import { BloodType } from './blood-type.enum';
 
+/**
+ * Entidade de detalhe de lote, contendo quantidade por tipo sanguíneo.
+ */
 @Entity({ name: 'batch_blood' })
 export class BatchBloodEntity {
   @PrimaryGeneratedColumn('uuid')

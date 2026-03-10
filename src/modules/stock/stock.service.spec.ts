@@ -2,8 +2,8 @@ import { DataSource, Repository } from 'typeorm';
 import { BatchBloodEntity } from '../batch/entities/batch-blood.entity';
 import { BatchEntity } from '../batch/entities/batch.entity';
 import { CompanyEntity } from '../company/entities/company.entity';
-import { IllegalArgumentException } from '../shared/exceptions/illegal-argument.exception';
-import { NoSuchElementException } from '../shared/exceptions/no-such-element.exception';
+import { IllegalArgumentException } from '../shared/errors/exceptions/illegal-argument.exception';
+import { NoSuchElementException } from '../shared/errors/exceptions/no-such-element.exception';
 import { InsufficientStockException } from './exceptions/insufficient-stock.exception';
 import { BloodstockMovementEntity } from './entities/bloodstock-movement.entity';
 import { BloodstockEntity } from './entities/bloodstock.entity';
@@ -16,6 +16,9 @@ type RepoMock<T extends object> = {
   save: jest.Mock;
 };
 
+/**
+ * Cria um mock padrão de repositório TypeORM para testes unitários.
+ */
 function createRepoMock<T extends object>(): RepoMock<T> {
   return {
     findOne: jest.fn(),
@@ -25,6 +28,10 @@ function createRepoMock<T extends object>(): RepoMock<T> {
   };
 }
 
+/**
+ * Suite de testes unitários do StockService,
+ * cobrindo regras de atualização, entrada/saída em lote e histórico.
+ */
 describe('StockService', () => {
   let service: StockService;
 

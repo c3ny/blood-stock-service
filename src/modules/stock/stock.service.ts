@@ -5,15 +5,18 @@ import { BatchBloodEntity } from '../batch/entities/batch-blood.entity';
 import { BatchEntity } from '../batch/entities/batch.entity';
 import { BloodType } from '../batch/entities/blood-type.enum';
 import { CompanyEntity } from '../company/entities/company.entity';
-import { BatchEntryRequestDto } from './dto/batch-entry-request.dto';
-import { BatchExitBulkRequestDto } from './dto/batch-exit-bulk-request.dto';
-import { CreateBloodstockDto } from './dto/create-bloodstock.dto';
-import { IllegalArgumentException } from '../shared/exceptions/illegal-argument.exception';
-import { NoSuchElementException } from '../shared/exceptions/no-such-element.exception';
+import { BatchEntryRequestDto } from './dto/request/batch-entry-request.dto';
+import { BatchExitRequestDto } from './dto/request/batch-exit-request.dto';
+import { IllegalArgumentException } from '../shared/errors/exceptions/illegal-argument.exception';
+import { NoSuchElementException } from '../shared/errors/exceptions/no-such-element.exception';
 import { InsufficientStockException } from './exceptions/insufficient-stock.exception';
 import { BloodstockMovementEntity } from './entities/bloodstock-movement.entity';
 import { BloodstockEntity } from './entities/bloodstock.entity';
 
+/**
+ * Serviço de regras de negócio do estoque de sangue.
+ * Centraliza operações de consulta, ajuste manual e processamento por lote.
+ */
 @Injectable()
 export class StockService {
   constructor(
@@ -24,45 +27,31 @@ export class StockService {
     private readonly companyRepository: Repository<CompanyEntity>,
     @InjectRepository(BloodstockMovementEntity)
     private readonly historyRepository: Repository<BloodstockMovementEntity>,
-    @InjectRepository(BatchEntity)
-    private readonly batchRepository: Repository<BatchEntity>,
-    @InjectRepository(BatchBloodEntity)
-    private readonly batchBloodRepository: Repository<BatchBloodEntity>,
   ) {}
 
-  async save(stockDto: CreateBloodstockDto, companyId: string): Promise<BloodstockEntity> {
-    const company = await this.companyRepository.findOne({ where: { id: companyId } });
-    if (!company) {
-      throw new NoSuchElementException('Empresa não encontrada');
-    }
 
-    const stock = this.stockRepository.create({
-      bloodType: stockDto.bloodType,
-      quantity: stockDto.quantity ?? 0,
-      company,
-    });
-
-    return this.stockRepository.save(stock);
-  }
-
-  listAll(): Promise<BloodstockEntity[]> {
-    return this.stockRepository.find();
-  }
-
+  /**
+   * Busca todos os itens de estoque de uma empresa específica.
+   */
   findByCompany(companyId: string): Promise<BloodstockEntity[]> {
     return this.stockRepository.find({
       where: { company: { id: companyId } },
     });
   }
 
-  async updateQuantity(id: string, movement: number): Promise<BloodstockEntity> {
-    const stock = await this.stockRepository.findOne({ where: { id } });
+  /**
+   * Atualiza a quantidade de um item de estoque e registra histórico da movimentação.
+   */
+  async updateQuantity(userId: string, batchCode: string, movement: number): Promise<BloodstockEntity> {
+    const stock = await this.stockRepository.findOne({ where: { batchCode } });
+    const company = await this.companyRepository.findOne({ where: { id: userId } });
     if (!stock) {
       throw new NoSuchElementException('Estoque não encontrado');
     }
 
     const current = stock.quantity;
     const updated = current + movement;
+    const actionBy = company?.fkUserId
 
     if (updated < 0) {
       throw new InsufficientStockException('Estoque insuficiente');
@@ -77,15 +66,18 @@ export class StockService {
       quantityAfter: updated,
       movement,
       actionDate: new Date(),
-      actionBy: 'system',
-      notes: 'Ajuste manual',
+      actionBy,
     });
     await this.historyRepository.save(history);
 
     return stock;
   }
 
-  async processBatchEntry(companyId: string, dto: BatchEntryRequestDto): Promise<BatchEntity> {
+  /**
+   * Processa entrada em lote de múltiplos tipos sanguíneos.
+   * Executa em transação para garantir consistência entre lote, estoque e histórico.
+   */
+  async processBatchEntry(userId: string, companyId: string, dto: BatchEntryRequestDto): Promise<BatchEntity> {
     return this.dataSource.transaction(async (manager) => {
       const companyRepository = manager.getRepository(CompanyEntity);
       const batchRepository = manager.getRepository(BatchEntity);
@@ -93,9 +85,9 @@ export class StockService {
       const stockRepository = manager.getRepository(BloodstockEntity);
       const historyRepository = manager.getRepository(BloodstockMovementEntity);
 
-      const company = await companyRepository.findOne({ where: { id: companyId } });
-      if (!company) {
-        throw new NoSuchElementException('Empresa não encontrada');
+      const company = await companyRepository.findOne({ where: { id: companyId, fkUserId: userId } });
+      if (!company || company.fkUserId !== userId) {
+        throw new NoSuchElementException('Empresa não encontrada, ou usuário sem permissão');
       }
 
       let batch = await batchRepository.findOne({
@@ -107,7 +99,7 @@ export class StockService {
         batch = batchRepository.create({
           company,
           batchCode: dto.batchCode,
-          entryDate: new Date().toISOString().slice(0, 10),
+          entryDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
           bloodDetails: [],
         });
         batch = await batchRepository.save(batch);
@@ -121,7 +113,7 @@ export class StockService {
         const type = bloodType as BloodType;
 
         let existing = batch.bloodDetails.find((item) => item.bloodType === type);
-        if (existing) {
+        if (existing ) {
           existing.quantity += qty;
         } else {
           existing = batchBloodRepository.create({
@@ -136,25 +128,32 @@ export class StockService {
           where: { company: { id: companyId }, bloodType: type },
         });
 
+       
+        /*
+        Validação de consistência do estoque base por tipo sanguíneo durante a entrada de lote.
+        Mesmo com a regra de negócio de pré-inicialização (todos os tipos com quantidade 0), 
+        a checagem if (!stock) permanece como proteção contra dados incompletos/inconsistentes no banco.
+        Se o registro não existir, a operação é interrompida com NoSuchElementException,
+         evitando atualização incorreta e mantendo integridade transacional.
+        */
         if (!stock) {
-          stock = stockRepository.create({
-            company,
-            bloodType: type,
-            quantity: 0,
-          });
+        throw new NoSuchElementException(
+          `Estoque base não inicializado para ${type} na empresa ${companyId}`,
+        );
         }
 
         const oldQty = stock.quantity;
         const newQty = oldQty + qty;
         stock.quantity = newQty;
         await stockRepository.save(stock);
+        const actionBy = company?.fkUserId
 
         const history = historyRepository.create({
           bloodstock: stock,
           movement: qty,
           quantityBefore: oldQty,
           quantityAfter: newQty,
-          actionBy: 'system',
+          actionBy: actionBy,
           notes: `Entrada em lote: ${dto.batchCode}`,
           actionDate: new Date(),
         });
@@ -165,7 +164,11 @@ export class StockService {
     });
   }
 
-  async processBulkBatchExit(companyId: string, dto: BatchExitBulkRequestDto): Promise<BatchEntity> {
+  /**
+   * Processa saída em lote para múltiplos tipos sanguíneos.
+   * Valida quantidades e impede geração de saldo negativo.
+   */
+  async processBatchExit(userId: string, companyId: string, dto: BatchExitRequestDto): Promise<BatchEntity> {
     return this.dataSource.transaction(async (manager) => {
       const companyRepository = manager.getRepository(CompanyEntity);
       const batchRepository = manager.getRepository(BatchEntity);
@@ -173,16 +176,16 @@ export class StockService {
       const historyRepository = manager.getRepository(BloodstockMovementEntity);
 
       const batch = await batchRepository.findOne({
-        where: { id: dto.batchId },
+        where: { id: dto.batchCode },
         relations: { bloodDetails: true },
       });
       if (!batch) {
         throw new NoSuchElementException('Lote não encontrado');
       }
 
-      const company = await companyRepository.findOne({ where: { id: companyId } });
+      const company = await companyRepository.findOne({ where: { id: companyId, fkUserId: userId } });
       if (!company) {
-        throw new NoSuchElementException('Empresa não encontrada');
+        throw new NoSuchElementException('Empresa não encontrada ou usuário sem permissão');
       }
 
       for (const [bloodType, qtyToRemove] of Object.entries(dto.quantities ?? {})) {
@@ -206,29 +209,37 @@ export class StockService {
         let stock = await stockRepository.findOne({
           where: { company: { id: companyId }, bloodType: type },
         });
+
+        /*
+        Validação de consistência do estoque base por tipo sanguíneo durante a entrada de lote.
+        Mesmo com a regra de negócio de pré-inicialização (todos os tipos com quantidade 0), 
+        a checagem if (!stock) permanece como proteção contra dados incompletos/inconsistentes no banco.
+        Se o registro não existir, a operação é interrompida com NoSuchElementException,
+         evitando atualização incorreta e mantendo integridade transacional.
+        */
         if (!stock) {
-          stock = stockRepository.create({
-            company,
-            bloodType: type,
-            quantity: 0,
-          });
+        throw new NoSuchElementException(
+          `Estoque base não inicializado para ${type} na empresa ${companyId}`,
+        );
         }
+        
 
         const oldStockQty = stock.quantity;
         const newStockQty = oldStockQty - qty;
         if (newStockQty < 0) {
           throw new IllegalArgumentException('Resultado inválido: estoque negativo');
         }
-
+        
         stock.quantity = newStockQty;
         await stockRepository.save(stock);
 
+        const actionBy = company?.fkUserId
         const history = historyRepository.create({
           bloodstock: stock,
           movement: qty * -1,
           quantityBefore: oldStockQty,
           quantityAfter: newStockQty,
-          actionBy: 'system',
+          actionBy: actionBy,
           notes: `Saída por lote: ${batch.batchCode}`,
           actionDate: new Date(),
         });
@@ -239,9 +250,12 @@ export class StockService {
     });
   }
 
-  getHistoryByBloodstockId(bloodstockId: string): Promise<BloodstockMovementEntity[]> {
+  /**
+   * Retorna o histórico de movimentações de um item de estoque ordenado por data.
+   */
+  getHistoryByBatchCode(batchCode: string): Promise<BloodstockMovementEntity[]> {
     return this.historyRepository.find({
-      where: { bloodstock: { id: bloodstockId } },
+      where: { bloodstock: { id: batchCode } },
       relations: { bloodstock: true },
       order: { updateDate: 'DESC' },
     });

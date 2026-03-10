@@ -15,6 +15,10 @@ export class RequestLoggingInterceptor implements NestInterceptor {
 
   constructor(private readonly requestContextService: RequestContextService) {}
 
+  /**
+   * Mede duração da requisição e registra logs estruturados de sucesso/erro
+   * com informações do contexto atual.
+   */
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const startedAt = Date.now();
 

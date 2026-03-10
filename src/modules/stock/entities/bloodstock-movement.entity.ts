@@ -9,6 +9,9 @@ import {
 } from 'typeorm';
 import { BloodstockEntity } from './bloodstock.entity';
 
+/**
+ * Entidade de histórico para registrar cada movimentação de estoque.
+ */
 @Entity({ name: 'bloodstock_movement' })
 export class BloodstockMovementEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -17,6 +20,9 @@ export class BloodstockMovementEntity {
   @ManyToOne(() => BloodstockEntity, (stock) => stock.movements, { nullable: false })
   @JoinColumn({ name: 'bloodstock_id' })
   bloodstock!: BloodstockEntity;
+
+  @Column({ name: 'batchCode', type: 'varchar', length: 50 })
+  batchCode!: string;
 
   @Column({ type: 'int' })
   movement!: number;
@@ -39,6 +45,9 @@ export class BloodstockMovementEntity {
   @Column({ name: 'update_date', type: 'timestamp', nullable: true })
   updateDate?: Date;
 
+  /**
+   * Atualiza automaticamente o timestamp de modificação do histórico.
+   */
   @BeforeInsert()
   @BeforeUpdate()
   refreshUpdateDate(): void {

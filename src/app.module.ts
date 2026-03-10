@@ -7,6 +7,10 @@ import { SharedModule } from './modules/shared/shared.module';
 import { StockModule } from './modules/stock/stock.module';
 import { appDataSourceOptions } from './database/typeorm.config';
 
+/**
+ * Módulo raiz responsável por compor os módulos de domínio,
+ * configuração global e conexão principal com o banco.
+ */
 @Module({
   imports: [
     ConfigModule.forRoot({

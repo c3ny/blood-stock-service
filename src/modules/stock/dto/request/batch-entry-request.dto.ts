@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsObject, IsString } from 'class-validator';
 
+/**
+ * DTO de entrada de lote com mapa de quantidades por tipo sanguíneo.
+ */
 export class BatchEntryRequestDto {
   @ApiProperty({ description: 'Código do lote' })
   @IsString()
@@ -15,6 +18,10 @@ export class BatchEntryRequestDto {
   @IsObject({ message: 'As quantidades de sangue são obrigatórias' })
   bloodQuantities!: Record<string, number>;
 
+  /**
+   * Executa validação adicional de regra para garantir quantidades numéricas
+   * maiores ou iguais a zero em todas as chaves informadas.
+   */
   validateQuantities(): string[] {
     const errors: string[] = [];
     if (!this.bloodQuantities || typeof this.bloodQuantities !== 'object') {

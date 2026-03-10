@@ -1,11 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsObject, IsOptional, IsUUID } from 'class-validator';
 
-export class BatchExitBulkRequestDto {
-  @ApiProperty({ description: 'ID do lote' })
+/**
+ * DTO para saída em lote contendo o identificador do lote e
+ * as quantidades a retirar por tipo sanguíneo.
+ */
+export class BatchExitRequestDto {
+  @ApiProperty({ description: 'Codigo do lote' })
   @IsUUID('4', { message: 'O lote é obrigatório' })
   @IsNotEmpty({ message: 'O lote é obrigatório' })
-  batchId!: string;
+  batchCode!: string;
 
   @ApiProperty({
     description: 'Mapa de quantidades de saída por tipo sanguíneo',

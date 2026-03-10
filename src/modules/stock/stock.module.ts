@@ -7,6 +7,9 @@ import { BloodstockEntity } from './entities/bloodstock.entity';
 import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
 
+/**
+ * Módulo de estoque: registra entidades, controller HTTP e service de regras de negócio.
+ */
 @Module({
   imports: [
     TypeOrmModule.forFeature([

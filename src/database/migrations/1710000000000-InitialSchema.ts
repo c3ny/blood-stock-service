@@ -1,8 +1,15 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
+/**
+ * Cria o esquema inicial do banco com tabelas de empresa, lote,
+ * detalhe de lote, estoque e histórico de movimentações.
+ */
 export class InitialSchema1710000000000 implements MigrationInterface {
   name = 'InitialSchema1710000000000';
 
+  /**
+   * Aplica a migração criando extensão e tabelas necessárias do domínio.
+   */
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"`);
 
@@ -67,6 +74,9 @@ export class InitialSchema1710000000000 implements MigrationInterface {
     `);
   }
 
+  /**
+   * Reverte a migração removendo as tabelas na ordem inversa de dependência.
+   */
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DROP TABLE IF EXISTS bloodstock_movement');
     await queryRunner.query('DROP TABLE IF EXISTS stock');

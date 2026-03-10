@@ -3,6 +3,10 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+/**
+ * Opções centrais de conexão do TypeORM para execução da aplicação
+ * e para comandos de migração.
+ */
 export const appDataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST ?? 'localhost',
@@ -16,5 +20,8 @@ export const appDataSourceOptions: DataSourceOptions = {
   logging: !isProduction,
 };
 
+/**
+ * DataSource utilizado por CLI/migrations para operações no banco.
+ */
 const appDataSource = new DataSource(appDataSourceOptions);
 export default appDataSource;

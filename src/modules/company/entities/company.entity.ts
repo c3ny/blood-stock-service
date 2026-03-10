@@ -1,5 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+/**
+ * Entidade de empresa (hemocentro/instituição) proprietária dos estoques e lotes.
+ */
 @Entity({ name: 'company' })
 export class CompanyEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -8,10 +11,10 @@ export class CompanyEntity {
   @Column({ nullable: true })
   name?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   cnpj?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   cnes?: string;
 
   @Column({ name: 'institution_name', nullable: true })

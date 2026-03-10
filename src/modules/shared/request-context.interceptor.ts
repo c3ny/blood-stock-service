@@ -13,6 +13,10 @@ import { RequestContextService } from './request-context.service';
 export class RequestContextInterceptor implements NestInterceptor {
   constructor(private readonly requestContextService: RequestContextService) {}
 
+  /**
+   * Captura dados da requisição HTTP, propaga headers de rastreio
+   * e executa o fluxo seguinte dentro de um contexto por request.
+   */
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse();
