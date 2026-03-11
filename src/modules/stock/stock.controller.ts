@@ -47,14 +47,13 @@ export class StockController {
    * Atualiza a quantidade de um item de estoque por ID.
    */
   @ApiOperation({ summary: 'Atualizar quantidade de um item do estoque' })
-  @Put('/:userId/:companyId/:batchCode')
+  @Put('/:batchCode/quantity')
   updateQuantity(
     @Param('batchCode') batchCode: string,
-    @Param('userId') userId: string,
     @Query('quantity', ParseIntPipe) quantity: number,
   ): Promise<BatchResponseDto> {
     return this.stockService
-      .updateQuantity(userId, batchCode, quantity)
+      .updateQuantity(batchCode, quantity)
       .then((stock) => this.mapStockToLegacyDto(stock));
   }
 
@@ -62,15 +61,14 @@ export class StockController {
    * Processa entrada em lote validando o payload e retornando o lote criado/atualizado.
    */
   @ApiOperation({ summary: 'Entrada de estoque por lote' })
-  @Post('/:userId/:companyId/batchEntry')
+  @Post('/:companyId/batchEntry')
   @HttpCode(HttpStatus.CREATED)
   async batchEntry(
     @Param('companyId') companyId: string,
-    @Param('userId') userId: string,
     @Body() dto: BatchEntryRequestDto,
   ): Promise<BatchResponseDto[]> {
 
-    const newBatch = await this.stockService.processBatchEntry(userId, companyId, dto);
+    const newBatch = await this.stockService.processBatchEntry(dto.batchCode, companyId, dto);
     return [this.mapToDto(newBatch)];
 
   }
@@ -79,14 +77,14 @@ export class StockController {
    * Processa saída em lote e retorna a posição atual de estoque da empresa.
    */
   @ApiOperation({ summary: 'Saída de estoque por lote' })
-  @Post('/:userId/:companyId/:batchCode/batchExit')
+  @Post('/:companyId/batchExit')
   @HttpCode(HttpStatus.OK)
   async processBulkExit(
   @Param('companyId') companyId: string,
-  @Param('userId') userId: string,
+
   @Body() dto: BatchExitRequestDto,
 ): Promise<BatchResponseDto[]> {
-  await this.stockService.processBatchExit(userId, companyId, dto);
+  await this.stockService.processBatchExit(companyId, dto);
   const companyStock = await this.stockService.findByCompany(companyId);
   return companyStock.map((stock) => this.mapStockToLegacyDto(stock));
   // Se erro → GlobalExceptionFilter pega automaticamente
@@ -96,16 +94,16 @@ export class StockController {
    * Retorna o histórico de movimentações de um item de estoque.
    */
   @ApiOperation({ summary: 'Histórico de movimentações' })
-  @Get('/:batchCode/history')
-  getHistory(@Param('batchCode') batchCode: string): Promise<BloodstockMovementEntity[]> {
-    return this.stockService.getHistoryByBatchCode(batchCode);
+  @Get('/company/:companyId/history')
+  getHistory(@Param('companyId') companyId: string): Promise<BloodstockMovementEntity[]> {
+    return this.stockService.getHistoryByBatchCode(companyId);
   }
 
   /**
    * Gera relatório CSV com os itens de estoque da empresa.
    */
   @ApiOperation({ summary: 'Gerar relatório CSV' })
-  @Get('/:companyId/report')
+  @Get('/report/:companyId')
   async generateReport(
     @Param('companyId') companyId: string,
     @Res() res: Response,
@@ -139,6 +137,7 @@ export class StockController {
           id: detail.id,
           bloodType: detail.bloodType,
           quantity: detail.quantity,
+          updateDate: detail.updateDate,
         })) ?? "Sem detalhes",
     };
   }
@@ -151,12 +150,13 @@ export class StockController {
       id: stock.id,
       batchCode: stock.batchCode ?? '',
       entryDate: stock.entryDate ?? null,
-      exitDate: stock.exitDate ?? null,
+      exitDate: stock.exitDate ? stock.exitDate.split('/').reverse().join('-') : null,
       bloodDetails: [
         {
           id: stock.id,
           bloodType: stock.bloodType,
           quantity: stock.quantity,
+          updateDate: stock.updateDate,
         },
       ],
     };
