@@ -6,6 +6,7 @@ import { BloodstockMovementEntity } from './entities/bloodstock-movement.entity'
 import { BloodstockEntity } from './entities/bloodstock.entity';
 import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
+import { BatchBloodEntity } from '../batch/entities/batch-blood.entity';
 
 /**
  * Módulo de estoque: registra entidades, controller HTTP e service de regras de negócio.
@@ -16,6 +17,7 @@ import { StockService } from './stock.service';
       BloodstockEntity,
       BloodstockMovementEntity,
       BatchEntity,
+      BatchBloodEntity,
       CompanyEntity,
     ]),
   ],

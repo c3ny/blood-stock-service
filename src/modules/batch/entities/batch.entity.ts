@@ -19,7 +19,7 @@ export class BatchEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'batch_code' })
+  @Column({ name: 'batchCode' })
   batchCode!: string;
 
   @Column({ name: 'entry_date', type: 'date', nullable: false })

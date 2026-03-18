@@ -12,8 +12,10 @@ import { BloodDetailDto } from './blood-detail.dto';
  */
 export class BatchResponseDto {
   id!: string;
-  batchCode!: string;
-  entryDate!: string | null;
-  exitDate!: string | null;
-  bloodDetails!: BloodDetailDto[];
+  bloodType!: string;
+  quantity!: number;
+  batchCode?: string | null;
+  entryDate?: string | null;
+  exitDate?: string | null;
+  bloodDetails?: BloodDetailDto[] | string;
 }

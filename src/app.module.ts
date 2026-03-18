@@ -5,7 +5,7 @@ import { BatchModule } from './modules/batch/batch.module';
 import { CompanyModule } from './modules/company/company.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { StockModule } from './modules/stock/stock.module';
-import { appDataSourceOptions } from './database/typeorm.config';
+import { AppDataSource } from './database/typeorm.config';
 
 /**
  * Módulo raiz responsável por compor os módulos de domínio,
@@ -18,8 +18,9 @@ import { appDataSourceOptions } from './database/typeorm.config';
       envFilePath: ['.env', '.env.local'],
     }),
     TypeOrmModule.forRoot({
-      ...appDataSourceOptions,
+      ...AppDataSource,
       autoLoadEntities: true,
+      synchronize: true,
     }),
     SharedModule,
     CompanyModule,

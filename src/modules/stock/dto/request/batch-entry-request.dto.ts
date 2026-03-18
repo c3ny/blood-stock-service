@@ -10,6 +10,16 @@ export class BatchEntryRequestDto {
   @IsNotEmpty({ message: 'O código do lote é obrigatório' })
   batchCode!: string;
 
+  @ApiProperty({ description: 'Data de validade' })
+  @IsString()
+  @IsNotEmpty({ message: 'A data de validade é obrigatória' })
+  expiryDate!: string;
+
+  @ApiProperty({ description: 'Data de entrada' })
+  @IsString()
+  @IsNotEmpty({ message: 'A data de entrada é obrigatória' })
+  entryDate!: string;
+
   @ApiProperty({
     description: 'Mapa de tipo sanguíneo para quantidade',
     example: { A_POS: 10, O_NEG: 3 },

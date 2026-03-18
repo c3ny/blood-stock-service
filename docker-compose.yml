@@ -1,0 +1,51 @@
+
+services:
+  bloodstock-service:
+    container_name: bloodstock-service
+    image: bloodstock-service:latest
+    build:
+      context: .
+      target: development
+      dockerfile: Dockerfile
+    command: npm run start
+    ports:
+      - "3004:3004"
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - services-network
+    
+
+  postgres_bloodstock:
+    container_name: postgres-bloodstock
+    image: postgres:16
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bloodstock
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-bloodstock:/var/lib/postgresql/data
+    networks:
+      - services-network
+
+
+volumes:
+  postgres-bloodstock:
+
+configs:
+  httpd-config:
+    external: true
+
+networks:
+  services-network:
+    name: services-network # ← adicionar
+    driver: bridge
+      

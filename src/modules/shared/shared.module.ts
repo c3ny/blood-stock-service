@@ -4,14 +4,16 @@ import { GlobalExceptionFilter } from './errors/filters/global-exception.filter'
 import { RequestContextInterceptor } from './request-context.interceptor';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { RequestContextService } from './request-context.service';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './auth/jwt.strategy';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
-/**
- * Módulo global com infraestrutura transversal:
- * contexto de requisição, logging e tratamento centralizado de exceções.
- */
 @Global()
 @Module({
+  imports: [PassportModule],
   providers: [
+    JwtStrategy,
+    JwtAuthGuard,
     {
       provide: APP_INTERCEPTOR,
       useClass: RequestContextInterceptor,
@@ -28,6 +30,11 @@ import { RequestContextService } from './request-context.service';
     RequestContextInterceptor,
     RequestLoggingInterceptor,
   ],
-  exports: [RequestContextInterceptor, RequestContextService, RequestLoggingInterceptor],
+  exports: [
+    JwtAuthGuard,
+    RequestContextInterceptor,
+    RequestContextService,
+    RequestLoggingInterceptor,
+  ],
 })
 export class SharedModule {}

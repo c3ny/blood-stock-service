@@ -1,6 +1,5 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 /**
@@ -28,31 +27,16 @@ async function bootstrap(): Promise<void> {
   );
 
   app.enableCors({
-    origin: true,
+    origin: [ 'http://localhost:3004',  '0.0.0.0' ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['*'],
   });
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Blood Stock Service API')
-    .setDescription('Migrated API with backward-compatible contracts')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-      'bearerAuth',
-    )
-    .build();
+  await app.listen((process.env.PORT ?? 3004));
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('/swagger-ui/index.html', app, document);
-
-  const port = Number(process.env.PORT ?? 8081);
-  await app.listen(port);
+  console.log(
+    `🚀 Blood Stock Service running on: http://localhost:${process.env.PORT ?? 3004}`,
+  );
+  
 }
 
 void bootstrap();

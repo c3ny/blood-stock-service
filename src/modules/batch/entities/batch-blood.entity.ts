@@ -14,12 +14,15 @@ export class BatchBloodEntity {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'batch_id' })
+  @JoinColumn({ name: 'batchCode' })
   batch!: BatchEntity;
 
   @Column({ name: 'blood_type', type: 'varchar', length: 10 })
   bloodType!: BloodType;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'integer', default: 0 })
   quantity!: number;
+
+  @Column({ name: 'expiry_date', type: 'date', nullable: false })
+  expiryDate!: string;
 }
