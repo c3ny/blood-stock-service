@@ -1,6 +1,6 @@
 {
   "name": "blood-stock-service-nest",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "NestJS migration for blood stock service",
   "scripts": {
