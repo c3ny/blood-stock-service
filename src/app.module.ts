@@ -21,9 +21,6 @@ import { AppDataSource } from './database/typeorm.config';
       ...AppDataSource,
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
-      ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
-        ? { rejectUnauthorized: false }
-        : false,
     }),
     SharedModule,
     CompanyModule,
