@@ -20,7 +20,7 @@ import { AppDataSource } from './database/typeorm.config';
     TypeOrmModule.forRoot({
       ...AppDataSource,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== 'production',
     }),
     SharedModule,
     CompanyModule,
