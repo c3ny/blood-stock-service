@@ -1,22 +1,16 @@
-# Dockerfile para NestJS
-FROM node AS development
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
-
-COPY package*.json ./
-COPY package-lock.json  ./
-
-RUN npm i
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
-
 RUN npm run build
 
-EXPOSE 3004
+# Remove devDependencies after build to save memory
+RUN npm prune --omit=dev
 
-ENTRYPOINT [ "sh", "/entrypoint.sh" ]
+EXPOSE 8080
 
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/main"]
