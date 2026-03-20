@@ -1,11 +1,9 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 
-/**
- * Inicializa a aplicação NestJS, configura validação global,
- * CORS, documentação Swagger e inicia o servidor HTTP.
- */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
@@ -35,12 +33,34 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  await app.listen((process.env.PORT ?? 3004));
+  // Swagger + Scalar
+  const config = new DocumentBuilder()
+    .setTitle('Blood Stock Service')
+    .setDescription('API de gerenciamento de estoque de sangue — Sangue Solidário')
+    .setVersion('0.1.2')
+    .addBearerAuth()
+    .build();
 
-  console.log(
-    `🚀 Blood Stock Service running on: http://localhost:${process.env.PORT ?? 3004}`,
+  const document = SwaggerModule.createDocument(app, config);
+
+  // Swagger UI (fallback) + JSON spec
+  SwaggerModule.setup('api-docs', app, document);
+
+  // Scalar UI
+  app.use(
+    '/docs',
+    apiReference({
+      spec: { content: document },
+      theme: 'kepler',
+    }),
   );
-  
+
+  const port = process.env.PORT ?? 3004;
+  await app.listen(port);
+
+  console.log(`🚀 Blood Stock Service running on: http://localhost:${port}`);
+  console.log(`📚 API Docs (Scalar): http://localhost:${port}/docs`);
+  console.log(`📋 Swagger JSON: http://localhost:${port}/api-docs-json`);
 }
 
 void bootstrap();

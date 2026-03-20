@@ -1,6 +1,6 @@
 {
   "name": "blood-stock-service-nest",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "NestJS migration for blood stock service",
   "scripts": {
@@ -40,6 +40,7 @@
     "@nestjs/platform-express": "^11.1.16",
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/typeorm": "^11.0.0",
+    "@scalar/nestjs-api-reference": "^1.1.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "passport": "^0.7.0",

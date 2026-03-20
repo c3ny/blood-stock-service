@@ -22,7 +22,7 @@ export class BatchEntryRequestDto {
 
   @ApiProperty({
     description: 'Mapa de tipo sanguíneo para quantidade',
-    example: { A_POS: 10, O_NEG: 3 },
+    example: { 'A+': 10, 'O-': 3 },
   })
   @IsNotEmpty({ message: 'As quantidades de sangue são obrigatórias' })
   @IsObject({ message: 'As quantidades de sangue são obrigatórias' })
