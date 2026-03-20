@@ -1,17 +1,13 @@
-import { BloodType } from "src/modules/batch/entities/blood-type.enum";
+import { ApiProperty } from '@nestjs/swagger';
+import { BloodType } from 'src/modules/batch/entities/blood-type.enum';
 
-/**
- * DTO de item detalhado de sangue dentro da resposta de um lote.
- * 
- * BloodDetailDto
-  Representa cada item dentro do lote (detalhe por tipo sanguíneo).
-  Campos: id, bloodType, quantity.
-  Uso: é filho de BatchResponseDto em bloodDetails.
- * 
- * 
- */
 export class BloodDetailDto {
+  @ApiProperty({ description: 'ID do detalhe', example: 'a1b2c3d4-...' })
   id!: string;
+
+  @ApiProperty({ description: 'Tipo sanguíneo', enum: BloodType, example: BloodType.A_POS })
   bloodType!: BloodType;
+
+  @ApiProperty({ description: 'Quantidade', example: 5 })
   quantity!: number;
 }
