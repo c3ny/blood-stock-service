@@ -7,11 +7,15 @@ import { DataSource, DataSourceOptions } from 'typeorm';
  */
 export const AppDataSource: DataSourceOptions = {
   type: 'postgres',
-  host: process.env.POSTGRES_HOST ?? 'localhost',
-  port: Number(process.env.POSTGRES_PORT ?? 5432),
-  username: String(process.env.POSTGRES_USERNAME),
-  password: String(process.env.POSTGRES_PASSWORD),
-  database: String(process.env.POSTGRES_DATABASE),
+  ...(process.env.DATABASE_URL
+    ? { url: process.env.DATABASE_URL }
+    : {
+        host: process.env.POSTGRES_HOST ?? 'localhost',
+        port: Number(process.env.POSTGRES_PORT ?? 5432),
+        username: String(process.env.POSTGRES_USERNAME),
+        password: String(process.env.POSTGRES_PASSWORD),
+        database: String(process.env.POSTGRES_DATABASE),
+      }),
   ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
     ? { rejectUnauthorized: false }
     : false,
