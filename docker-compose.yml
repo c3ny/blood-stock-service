@@ -5,13 +5,10 @@ services:
     image: bloodstock-service:latest
     build:
       context: .
-      target: development
+      target: production
       dockerfile: Dockerfile
-    command: npm run start
     ports:
       - "3004:3004"
-    volumes:
-      - .:/app
     restart: unless-stopped
     env_file:
       - .env

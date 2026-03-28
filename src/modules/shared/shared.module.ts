@@ -7,6 +7,8 @@ import { RequestContextService } from './request-context.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { InternalSecretGuard } from './auth/internal-secret.guard';
+import { RequireCompanyGuard } from './auth/require-company.guard';
 
 @Global()
 @Module({
@@ -14,6 +16,8 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
   providers: [
     JwtStrategy,
     JwtAuthGuard,
+    InternalSecretGuard,
+    RequireCompanyGuard,
     {
       provide: APP_INTERCEPTOR,
       useClass: RequestContextInterceptor,
@@ -32,6 +36,8 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
   ],
   exports: [
     JwtAuthGuard,
+    InternalSecretGuard,
+    RequireCompanyGuard,
     RequestContextInterceptor,
     RequestContextService,
     RequestLoggingInterceptor,

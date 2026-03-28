@@ -20,6 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../shared/auth/jwt-auth.guard';
+import { RequireCompanyGuard } from '../shared/auth/require-company.guard';
+import { InternalSecretGuard } from '../shared/auth/internal-secret.guard';
 import { BatchEntryRequestDto } from './dto/request/batch-entry-request.dto';
 import { BatchExitRequestDto } from './dto/request/batch-exit-request.dto';
 import { BatchResponseDto } from './dto/response/batch-response.dto';
@@ -31,7 +33,7 @@ import { SkipAuth } from '../shared/auth/skip-auth.decorator';
 
 @ApiTags('Estoque de Sangue')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RequireCompanyGuard)
 @Controller('api/stock')
 export class StockController {
   constructor(private readonly stockService: StockService) {}
@@ -133,6 +135,7 @@ export class StockController {
   @ApiResponse({ status: 201, description: 'Estoque inicializado' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @SkipAuth()
+  @UseGuards(InternalSecretGuard)
   @Post('/init')
   @HttpCode(HttpStatus.CREATED)
   async initStock(@Body() dto: InitStockRequestDto): Promise<void> {
