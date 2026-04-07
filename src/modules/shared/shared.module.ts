@@ -3,6 +3,9 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './errors/filters/global-exception.filter';
 import { RequestContextInterceptor } from './request-context.interceptor';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
+import { AppLoggerService } from '../../shared/logger/app-logger.service';
+import { HttpLoggingInterceptor } from '../../shared/interceptors/http-logging.interceptor';
+import { AllExceptionsFilter } from '../../shared/filters/all-exceptions.filter';
 import { RequestContextService } from './request-context.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './auth/jwt.strategy';
@@ -30,6 +33,18 @@ import { RequireCompanyGuard } from './auth/require-company.guard';
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
     },
+    {
+      provide: AppLoggerService,
+      useFactory: () => new AppLoggerService('blood-stock-service'),
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpLoggingInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
     RequestContextService,
     RequestContextInterceptor,
     RequestLoggingInterceptor,
@@ -41,6 +56,7 @@ import { RequireCompanyGuard } from './auth/require-company.guard';
     RequestContextInterceptor,
     RequestContextService,
     RequestLoggingInterceptor,
+    AppLoggerService,
   ],
 })
 export class SharedModule {}
