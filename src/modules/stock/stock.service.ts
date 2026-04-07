@@ -13,6 +13,7 @@ import { InsufficientStockException } from "./exceptions/insufficient-stock.exce
 import { BloodstockMovementEntity } from "./entities/bloodstock-movement.entity";
 import { BloodstockEntity } from "./entities/bloodstock.entity";
 import { InitStockRequestDto } from "./dto/request/init-stock-request.dto";
+import { AppLoggerService } from "../../shared/logger/app-logger.service";
 
 @Injectable()
 export class StockService {
@@ -24,6 +25,7 @@ export class StockService {
     private readonly movementRepository: Repository<BloodstockMovementEntity>,
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
+    private readonly logger: AppLoggerService,
   ) {}
 
   findByCompany(companyId: string): Promise<BloodstockEntity[]> {
@@ -111,7 +113,13 @@ export class StockService {
         );
       }
 
-      return batchRepo.save(batch);
+      const saved = await batchRepo.save(batch);
+      this.logger.info('Batch entry processed', {
+        companyId,
+        batchCode,
+        bloodTypes: Object.keys(dto.bloodQuantities ?? {}),
+      });
+      return saved;
     });
   }
 
@@ -199,6 +207,13 @@ export class StockService {
         }
 
         await stockRepo.save(stock);
+        this.logger.info('Batch exit processed (FEFO)', {
+          companyId,
+          bloodType: type,
+          quantityRemoved: totalQtyToRemove,
+          quantityBefore: oldStockQty,
+          quantityAfter: stock.quantity,
+        });
 
         // Registra data de saída nos lotes que foram completamente esvaziados
         const exitDate = dto.exitDate.split("/").reverse().join("-");
@@ -273,6 +288,8 @@ async getAvailableBatchesByBloodType(companyId: string, bloodType: string): Prom
           );
         }
       }
+
+      this.logger.info('Company stock initialized', { companyId: dto.companyId });
     });
   }
 
