@@ -16,7 +16,9 @@ export const AppDataSource: DataSourceOptions = {
         password: String(process.env.POSTGRES_PASSWORD),
         database: String(process.env.POSTGRES_DATABASE),
       }),
-  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
+  ssl: process.env.DATABASE_SSL === 'false'
+    ? false
+    : process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
     ? { rejectUnauthorized: false }
     : false,
   entities: ['dist/**/*.entity.js'],
