@@ -22,6 +22,7 @@ import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../shared/auth/jwt-auth.guard';
 import { RequireCompanyGuard } from '../shared/auth/require-company.guard';
 import { InternalSecretGuard } from '../shared/auth/internal-secret.guard';
+import { AuthenticatedUser } from '../shared/auth/jwt.strategy';
 import { BatchEntryRequestDto } from './dto/request/batch-entry-request.dto';
 import { BatchExitRequestDto } from './dto/request/batch-exit-request.dto';
 import { BatchResponseDto } from './dto/response/batch-response.dto';
@@ -43,7 +44,7 @@ export class StockController {
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Get()
   findByCompany(@Req() req: Request): Promise<BatchResponseDto[]> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     return this.stockService
       .findByCompany(companyId)
       .then((stocks) => stocks.map((stock) => this.mapStockToDto(stock)));
@@ -59,7 +60,7 @@ export class StockController {
     @Req() req: Request,
     @Body() dto: BatchEntryRequestDto,
   ): Promise<BatchResponseDto[]> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     await this.stockService.processBatchEntry(dto.batchCode, companyId, dto);
     const companyStock = await this.stockService.findByCompany(companyId);
     return companyStock.map((stock) => this.mapStockToDto(stock));
@@ -74,7 +75,7 @@ export class StockController {
     @Req() req: Request,
     @Param('bloodType') bloodType: string,
   ): Promise<any[]> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     return this.stockService.getAvailableBatchesByBloodType(
       companyId,
       bloodType,
@@ -91,7 +92,7 @@ export class StockController {
     @Req() req: Request,
     @Body() dto: BatchExitRequestDto,
   ): Promise<BatchResponseDto[]> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     await this.stockService.processBatchExit(companyId, dto);
     const companyStock = await this.stockService.findByCompany(companyId);
     return companyStock.map((stock) => this.mapStockToDto(stock));
@@ -102,7 +103,7 @@ export class StockController {
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Get('/history')
   getHistory(@Req() req: Request): Promise<BloodstockMovementEntity[]> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     return this.stockService.getHistoryByCompany(companyId);
   }
 
@@ -115,7 +116,7 @@ export class StockController {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    const companyId = (req.user as any).companyId;
+    const companyId = (req.user as AuthenticatedUser).companyId!;
     const stockList = await this.stockService.findByCompany(companyId);
 
     const csvContent = [

@@ -1,6 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
+export interface JwtPayload {
+  id: string;
+  email: string;
+  personType: string;
+  companyId: string | null;
+  iat?: number;
+  exp?: number;
+}
+
+export interface AuthenticatedUser {
+  userId: string;
+  email: string;
+  personType: string;
+  companyId: string | null;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,7 +30,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: { id: string; email: string; personType: string; companyId: string | null }) {
+  validate(payload: JwtPayload): AuthenticatedUser {
+    if (!payload.id) {
+      throw new UnauthorizedException('Invalid token: missing user id');
+    }
+    if (payload.personType === 'COMPANY' && !payload.companyId) {
+      throw new UnauthorizedException('Invalid token: COMPANY missing companyId');
+    }
     return {
       userId: payload.id,
       email: payload.email,
