@@ -19,7 +19,7 @@ export const AppDataSource: DataSourceOptions = {
   ssl: process.env.DATABASE_SSL === 'false'
     ? false
     : process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
-    ? { rejectUnauthorized: false }
+    ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
     : false,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/database/migrations/*.js'],
