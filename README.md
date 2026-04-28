@@ -223,25 +223,101 @@ POST /api/stock/batchExit
 
 ## Docker
 
-### Com Docker Compose (raiz do projeto)
+Este repositório é o **backend principal** do PI e contém o `docker-compose.yml` que orquestra **todos os microsserviços + frontend + bancos** do projeto Sangue Solidário.
 
-```bash
-# Subir o serviço + banco
-docker compose up -d bloodstock-service
+### Estrutura esperada (clonar todos os repos como irmãos)
 
-# Rebuild após alterações
-docker compose up -d --build bloodstock-service
-
-# Ver logs
-docker compose logs -f bloodstock-service
+```
+qualquer-pasta/
+├── blood-stock-service/         ← este repo (contém o docker-compose.yml e scripts)
+├── sangue-solidario-nextjs/     ← clonar lado a lado
+├── users-service/               ← clonar lado a lado
+├── donation-service/            ← clonar lado a lado
+├── cdn-service-node/            ← clonar lado a lado
+├── campaign-service/            ← clonar lado a lado
+└── appointments-service-node/   ← clonar lado a lado
 ```
 
-### Dockerfile standalone
+### Subindo o sistema completo
+
+A partir desta pasta (`blood-stock-service/`):
+
+```bash
+# 1) Configurar variáveis de ambiente
+cp .env.example .env
+# editar .env com os secrets reais
+
+# 2) Subir todos os serviços (backend + frontend + bancos)
+docker compose up -d
+# ou: ./up.sh
+
+# 3) Verificar containers
+docker compose ps
+
+# 4) Logs
+docker compose logs -f bloodstock-service
+
+# 5) Derrubar tudo
+docker compose down
+# ou: ./down.sh
+```
+
+Scripts auxiliares: `up.sh`, `down.sh`, `rebuild.sh` (interativo), `restart.sh` (interativo).
+
+### Subindo apenas o blood-stock isolado (modo desenvolvimento)
+
+Se quiser desenvolver **somente** este serviço sem subir todos os outros, use o compose standalone:
+
+```bash
+docker compose -f docker-compose.standalone.yml up -d
+```
+
+Esse arquivo sobe apenas `bloodstock-service` + `postgres_bloodstock` em uma rede isolada (`services-network`), com volume nomeado para persistir o banco.
+
+### Dockerfile standalone (sem compose)
 
 ```bash
 docker build -t bloodstock-service .
 docker run -p 3004:3004 --env-file .env bloodstock-service
 ```
+
+### Regra de rede entre containers
+
+O `docker-compose.yml` cria 5 redes Docker bridge isoladas:
+
+| Rede | Containers |
+|---|---|
+| `blood-users-network` | users-service + bloodstock-service + 2 Postgres |
+| `donation-network` | donation-service + Mongo |
+| `cdn-network` | cdn-service |
+| `campaign-network` | campaign-service + Postgres |
+| `appointments-network` | appointments-service-node + Postgres |
+
+O frontend está em **todas** as redes (precisa falar com todos os backends). Dentro de cada rede, os containers se enxergam pelo nome (ex: `http://bloodstock-service:3004` a partir do users-service).
+
+### Docker Hub (CI/CD)
+
+A cada push na branch `main`, o workflow `.github/workflows/cd.yaml` automaticamente:
+
+1. Faz login no Docker Hub usando os secrets `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` (sem expor credenciais no workflow)
+2. Lê a TAG mais recente do versionamento Git (gerada pelo `ci.yaml` via semver)
+3. Faz `docker build` com **duas tags**:
+   - `:VERSION` — mesma tag do versionamento (ex: `v1.2.0`)
+   - `:latest` — sempre aponta para a última imagem publicada
+4. Faz `docker push` das duas tags para o repositório público
+5. Após publicar no Docker Hub, faz pull da imagem versionada e re-tagueia para `registry.heroku.com` (deploy contínuo)
+
+**Repositório público:** `https://hub.docker.com/r/<DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>`
+
+```bash
+# Pull da última versão
+docker pull <DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>:latest
+
+# Pull de uma versão específica
+docker pull <DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>:v1.2.0
+```
+
+> O Docker Hub é **acumulativo** — todas as TAGs versionadas geradas pelo pipeline ficam disponíveis para rollback ou inspeção, espelhando as tags do GitHub.
 
 ## Documentação da API
 

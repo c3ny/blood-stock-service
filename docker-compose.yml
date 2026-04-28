@@ -1,48 +1,264 @@
-
 services:
-  bloodstock-service:
-    container_name: bloodstock-service
-    image: bloodstock-service:latest
-    build:
-      context: .
-      target: production
-      dockerfile: Dockerfile
-    ports:
-      - "3004:3004"
-    restart: unless-stopped
-    env_file:
-      - .env
-    networks:
-      - services-network
-    
 
-  postgres_bloodstock:
-    container_name: postgres-bloodstock
-    image: postgres:16
+  # ─── DONATION SERVICE ────────────────────────────────────────────
+  mongo_donation_service:
+    image: mongo
+    container_name: mongo_donation_service
     restart: unless-stopped
-    env_file:
-      - .env
+    ports:
+      - "27017:27017"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bloodstock
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    networks:
+      - donation-network
+
+  donation-service:
+    build: ../donation-service
+    container_name: donation-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_HOST: mongo_donation_service
+      MONGO_DBNAME: donation_service
+      MONGO_PORT: 27017
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - mongo_donation_service
+    networks:
+      - donation-network
+
+  # ─── BLOOD STOCK SERVICE ─────────────────────────────────────────
+  postgres_bloodstock:
+    image: postgres:16
+    container_name: postgres-bloodstock
+    restart: unless-stopped
     ports:
       - "5433:5432"
-    volumes:
-      - postgres-bloodstock:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: bloodstock
     networks:
-      - services-network
+      - blood-users-network
 
+  bloodstock-service:
+    build: .
+    container_name: bloodstock-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      # Dev local: synchronize=true cria schema via entities (app.module.ts:23).
+      # Produção (Heroku) roda migrations; aqui queremos iteração rápida.
+      NODE_ENV: development
+      DATABASE_SSL: "false"
+      PORT: 3004
+      POSTGRES_HOST: postgres_bloodstock
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: bloodstock
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres_bloodstock
+    networks:
+      - blood-users-network
 
-volumes:
-  postgres-bloodstock:
+  # ─── USERS SERVICE ───────────────────────────────────────────────
+  postgres_users_service:
+    image: postgres:16
+    container_name: postgres-users-service
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: users
+    networks:
+      - blood-users-network
 
-configs:
-  httpd-config:
-    external: true
+  users-service:
+    build: ../users-service
+    container_name: users-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      # Dev local: synchronize=true cria users/donor/company via entities
+      # (user.module.ts:49). Em prod (Neon), migrations explícitas.
+      NODE_ENV: development
+      DATABASE_SSL: "false"
+      PORT: 3002
+      POSTGRES_HOST: postgres_users_service
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: users
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_users_service:5432/users
+      BLOODSTOCK_SERVICE_URL: http://bloodstock-service:3004
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres_users_service
+      - bloodstock-service
+    networks:
+      - blood-users-network
+
+  # ─── NEXT.JS FRONTEND ───────────────────────────────────────────
+  nextjs-frontend:
+    build:
+      context: ../sangue-solidario-nextjs
+      args:
+        NEXT_PUBLIC_USERS_SERVICE_URL: http://localhost:3002
+        NEXT_PUBLIC_DONATION_SERVICE_URL: http://localhost:3001
+        NEXT_PUBLIC_BLOOD_STOCK_SERVICE_URL: http://localhost:3004
+        NEXT_PUBLIC_CDN_SERVICE_URL: http://localhost:3005
+        NEXT_PUBLIC_APPOINTMENTS_SERVICE_URL: http://localhost:3003
+        NEXT_PUBLIC_FEATURE_BLOG: "false"
+        NEXT_PUBLIC_FEATURE_ABOUT_US: "true"
+        NEXT_PUBLIC_FEATURE_APPOINTMENTS: "true"
+        NEXT_PUBLIC_MAPBOX_TOKEN: ${NEXT_PUBLIC_MAPBOX_TOKEN}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        NEXT_PUBLIC_CAMPAIGN_SERVICE_URL: http://localhost:3006
+        NEXT_PUBLIC_FEATURE_CAMPAIGNS: "true"
+    container_name: nextjs-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      USERS_SERVICE_URL: http://users-service:3002
+      DONATION_SERVICE_URL: http://donation-service:3001
+      BLOOD_STOCK_SERVICE_URL: http://bloodstock-service:3004
+      CDN_SERVICE_URL: http://cdn-service:3005
+      APPOINTMENTS_SERVICE_URL: http://appointments-service-node:3003
+      MAPBOX_ACCESS_TOKEN: ${MAPBOX_ACCESS_TOKEN}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      CAMPAIGN_SERVICE_URL: http://campaign-service:3006
+    depends_on:
+      - users-service
+      - donation-service
+      - bloodstock-service
+      - cdn-service
+      - campaign-service
+      - appointments-service-node
+    networks:
+      - blood-users-network
+      - donation-network
+      - cdn-network
+      - campaign-network
+      - appointments-network
+
+  # ─── CAMPAIGN SERVICE ──────────────────────────────────────────
+  postgres_campaign:
+    image: postgres:16
+    container_name: postgres-campaign
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: campaign_db
+    networks:
+      - campaign-network
+
+  campaign-service:
+    build: ../campaign-service
+    container_name: campaign-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      NODE_ENV: production
+      DATABASE_SSL: "false"
+      PORT: 3006
+      DB_HOST: postgres_campaign
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_NAME: campaign_db
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      - postgres_campaign
+    networks:
+      - campaign-network
+
+  # ─── CDN SERVICE ───────────────────────────────────────────────
+  cdn-service:
+    build: ../cdn-service-node
+    container_name: cdn-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      JWT_SECRET: ${JWT_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
+    networks:
+      - cdn-network
+
+  # ─── APPOINTMENTS SERVICE (Node/NestJS — substitui legado Java) ──
+  postgres_appointments:
+    image: postgres:16
+    container_name: postgres-appointments
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: appointments
+    networks:
+      - appointments-network
+
+  appointments-service-node:
+    build: ../appointments-service-node
+    container_name: appointments-service-node
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      DATABASE_SSL: "false"
+      PORT: 3003
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_appointments:5432/appointments
+      JWT_SECRET: ${JWT_SECRET}
+      CAMPAIGN_SERVICE_URL: http://campaign-service:3006
+      CORS_ORIGINS: http://localhost:3000
+      APPOINTMENTS_MAX_PER_SLOT: "2"
+      LOG_LEVEL: info
+    depends_on:
+      - postgres_appointments
+      - campaign-service
+    networks:
+      - appointments-network
+      - campaign-network
 
 networks:
-  services-network:
-    name: services-network # ← adicionar
+  donation-network:
     driver: bridge
-      
+  blood-users-network:
+    driver: bridge
+  cdn-network:
+    driver: bridge
+  campaign-network:
+    driver: bridge
+  appointments-network:
+    driver: bridge
