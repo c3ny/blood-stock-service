@@ -189,12 +189,21 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASS: ${POSTGRES_PASSWORD}
       DB_NAME: campaign_db
+      # main remota lê DB_DATABASE; branch local renomeou pra DB_NAME.
+      # Mantemos os dois pra compatibilidade até a branch nova ser merged.
+      DB_DATABASE: campaign_db
       JWT_SECRET: ${JWT_SECRET}
+      # Versão da main valida JWT chamando users-service via HTTP.
+      # Branch local valida com JWT_SECRET. Mantemos a URL pra compatibilidade.
+      USERS_SERVICE_URL: http://users-service:3002
       CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000
     depends_on:
       - postgres_campaign
     networks:
+      # blood-users-network adicionada pra que campaign-service alcance users-service.
       - campaign-network
+      - blood-users-network
 
   # ─── CDN SERVICE ───────────────────────────────────────────────
   cdn-service:
