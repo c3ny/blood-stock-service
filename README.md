@@ -297,24 +297,33 @@ O frontend está em **todas** as redes (precisa falar com todos os backends). De
 
 ### Docker Hub (CI/CD)
 
+As imagens são publicadas em uma **organização** Docker Hub corporativa do PI (`firec4io`). O workflow usa **três secrets** distintos para isolar credencial de login do namespace de destino:
+
+| Secret | Valor | Uso |
+|---|---|---|
+| `DOCKERHUB_USERNAME` | `caiocesardevback` | User que faz login (organizations no Docker Hub não fazem login direto) |
+| `DOCKERHUB_TOKEN` | Personal Access Token | Senha do login |
+| `DOCKERHUB_NAMESPACE` | `firec4io` | Organização onde a imagem é publicada |
+
 A cada push na branch `main`, o workflow `.github/workflows/cd.yaml` automaticamente:
 
-1. Faz login no Docker Hub usando os secrets `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` (sem expor credenciais no workflow)
-2. Lê a TAG mais recente do versionamento Git (gerada pelo `ci.yaml` via semver)
-3. Faz `docker build` com **duas tags**:
-   - `:VERSION` — mesma tag do versionamento (ex: `v1.2.0`)
+1. Faz login no Docker Hub com `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` (credenciais nunca expostas no workflow — ficam em GitHub Secrets)
+2. **Verifica/cria o repositório público** `firec4io/blood-stock-service` na API Hub (idempotente — se já existe, segue)
+3. Lê a TAG mais recente do versionamento Git (gerada pelo `ci.yaml` via semver — `feat:` → MINOR, `fix:`/`chore:`/`refactor:` → PATCH, `BREAKING CHANGE` → MAJOR)
+4. Faz `docker build` com **duas tags**:
+   - `:VERSION` — mesma tag do versionamento (ex: `v0.7.1`)
    - `:latest` — sempre aponta para a última imagem publicada
-4. Faz `docker push` das duas tags para o repositório público
-5. Após publicar no Docker Hub, faz pull da imagem versionada e re-tagueia para `registry.heroku.com` (deploy contínuo)
+5. Faz `docker push` das duas tags para o repositório público da org
+6. Faz pull da imagem versionada, re-tagueia para `registry.heroku.com` e faz `heroku container:release` (deploy contínuo)
 
-**Repositório público:** `https://hub.docker.com/r/<DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>`
+**Repositório público:** [`https://hub.docker.com/r/firec4io/blood-stock-service`](https://hub.docker.com/r/firec4io/blood-stock-service)
 
 ```bash
 # Pull da última versão
-docker pull <DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>:latest
+docker pull firec4io/blood-stock-service:latest
 
 # Pull de uma versão específica
-docker pull <DOCKERHUB_USERNAME>/<HEROKU_APP_NAME>:v1.2.0
+docker pull firec4io/blood-stock-service:v0.7.1
 ```
 
 > O Docker Hub é **acumulativo** — todas as TAGs versionadas geradas pelo pipeline ficam disponíveis para rollback ou inspeção, espelhando as tags do GitHub.
