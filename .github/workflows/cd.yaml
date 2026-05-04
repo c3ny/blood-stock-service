@@ -9,28 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 📥 Checkout
+      # Checkout
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 🏷️ Versão
+      # Versão
       - name: Obter versão da tag
         run: |
           git fetch --tags
           VERSION=$(git describe --tags --abbrev=0 || echo "v0.0.0")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # 🔐 Login Docker Hub
+      # Login Docker Hub
       - name: Login Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 📂 Verifica se o repo existe no Docker Hub e cria se necessario
-      # (atende item Docker Hub #4 da Entrega 3 PI: "step para verificacao/criacao
-      #  do repositorio no Docker Hub").
+      # Verifica se o repo existe no Docker Hub e cria se necessario
       - name: Verificar/criar repositorio no Docker Hub
         env:
           DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -44,7 +42,7 @@ jobs:
             https://hub.docker.com/v2/users/login/ | jq -r .token)
 
           if [ -z "$HUB_TOKEN" ] || [ "$HUB_TOKEN" = "null" ]; then
-            echo "❌ Falha no login da API Docker Hub"
+            echo "Falha no login da API Docker Hub"
             exit 1
           fi
 
@@ -53,24 +51,22 @@ jobs:
             "https://hub.docker.com/v2/repositories/$DH_NAMESPACE/$DH_REPO/")
 
           if [ "$STATUS" = "200" ]; then
-            echo "✓ Repositorio $DH_NAMESPACE/$DH_REPO ja existe"
+            echo "[OK] Repositorio $DH_NAMESPACE/$DH_REPO ja existe"
           elif [ "$STATUS" = "404" ]; then
-            echo "→ Criando repositorio publico $DH_NAMESPACE/$DH_REPO"
+            echo "[NEW] Criando repositorio publico $DH_NAMESPACE/$DH_REPO"
             curl -fsSL -H "Authorization: JWT $HUB_TOKEN" \
               -H "Content-Type: application/json" \
               -X POST \
               -d "{\"namespace\":\"$DH_NAMESPACE\",\"name\":\"$DH_REPO\",\"is_private\":false,\"description\":\"Sangue Solidario - $DH_REPO\"}" \
               https://hub.docker.com/v2/repositories/
             echo ""
-            echo "✓ Repositorio criado"
+            echo "[OK] Repositorio criado"
           else
-            echo "❌ Status inesperado da API: HTTP $STATUS"
+            echo "Status inesperado da API: HTTP $STATUS"
             exit 1
           fi
 
-      # 🐳 Build e push
-      # NAMESPACE = org Docker Hub (firec4io); USERNAME so para login (caiocesardevback).
-      # Separar permite usar conta de organizacao mesmo sem login direto pela org.
+      # Build e push
       - name: Build e push
         run: |
           docker build \
@@ -80,31 +76,31 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:latest
           docker push ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
 
-      # 🔽 PULL da imagem pronta (do Docker Hub)
+      # PULL da imagem pronta (do Docker Hub)
       - name: Pull da imagem
         run: |
           docker pull ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
 
-      # 🔐 Login no Heroku Registry
+      # Login no Heroku Registry
       - name: Login Heroku Container Registry
         run: |
           echo ${{ secrets.HEROKU_API_KEY }} | docker login \
             --username=_ \
             --password-stdin registry.heroku.com
 
-      # 🔁 TAG para Heroku
+      # TAG para Heroku
       - name: Tag imagem para Heroku
         run: |
           docker tag \
             ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }} \
             registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
 
-      # 🚀 PUSH para Heroku
+      # PUSH para Heroku
       - name: Push para Heroku
         run: |
           docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
 
-      # 📦 Release
+      # Release
       - name: Release no Heroku
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
