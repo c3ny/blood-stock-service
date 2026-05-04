@@ -281,6 +281,27 @@ docker build -t bloodstock-service .
 docker run -p 3004:3004 --env-file .env bloodstock-service
 ```
 
+### Docker Hub
+
+Imagens publicadas na organização **`firec4io`** no Docker Hub a cada push em `main`. O workflow `.github/workflows/cd.yaml` builda com TAG versionada (mesma do git, ex: `v0.7.5`) + TAG `latest` e faz push automático. O repositório é criado pelo próprio workflow se não existir (idempotente).
+
+Repositório público: https://hub.docker.com/r/firec4io/blood-stock-service
+
+```bash
+docker pull firec4io/blood-stock-service:latest
+docker pull firec4io/blood-stock-service:v0.7.5
+```
+
+Secrets usados (configurados no GitHub, nunca expostos no workflow):
+
+| Secret | Uso |
+|---|---|
+| `DOCKERHUB_USERNAME` | User que faz login (orgs não fazem login direto) |
+| `DOCKERHUB_TOKEN` | Personal Access Token |
+| `DOCKERHUB_NAMESPACE` | Org de destino (`firec4io`) |
+
+> O Docker Hub é **acumulativo** — todas as TAGs versionadas geradas pelo CI ficam disponíveis para rollback ou inspeção, espelhando as tags do git.
+
 ## Documentação da API
 
 Com o serviço rodando, acesse:
