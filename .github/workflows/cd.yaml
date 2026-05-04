@@ -28,20 +28,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 🐳 Build e push (igual antes)
+      # 🐳 Build e push
+      # NAMESPACE = org Docker Hub (firec4io); USERNAME so para login (caiocesardevback).
+      # Separar permite usar conta de organizacao mesmo sem login direto pela org.
       - name: Build e push
         run: |
           docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:latest \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }} .
+            -t ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:latest \
+            -t ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }} .
 
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
+          docker push ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:latest
+          docker push ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
 
       # 🔽 PULL da imagem pronta (do Docker Hub)
       - name: Pull da imagem
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
+          docker pull ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }}
 
       # 🔐 Login no Heroku Registry
       - name: Login Heroku Container Registry
@@ -54,7 +56,7 @@ jobs:
       - name: Tag imagem para Heroku
         run: |
           docker tag \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }} \
+            ${{ secrets.DOCKERHUB_NAMESPACE }}/${{ secrets.HEROKU_APP_NAME }}:${{ env.VERSION }} \
             registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
 
       # 🚀 PUSH para Heroku
