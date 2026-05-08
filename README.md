@@ -313,7 +313,8 @@ Com o serviço rodando, acesse:
 
 ### SonarCloud (SAST)
 
-Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`). O step usa a action oficial `sonarsource/sonarcloud-github-action` e é puramente analítico — não bloqueia a esteira em caso de issues; serve para acompanhar o quality gate ao longo do tempo.
+Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`). 
+O step usa a action oficial `sonarsource/sonarcloud-github-action` e é puramente analítico — não bloqueia a esteira em caso de issues; serve para acompanhar o quality gate ao longo do tempo.
 
 Projeto público no Sonar Cloud: https://sonarcloud.io/project/overview?id=$SONAR_PROJECT_KEY
 
