@@ -11,6 +11,7 @@
     "lint": "eslint \"src/**/*.ts\"",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --runInBand --coverage",
     "migration:run": "typeorm-ts-node-commonjs -d src/database/typeorm.config.ts migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d src/database/typeorm.config.ts migration:revert",
     "migration:generate": "typeorm-ts-node-commonjs -d src/database/typeorm.config.ts migration:generate src/database/migrations/AutoMigration"
@@ -21,15 +22,25 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
+    "modulePaths": [
+      "<rootDir>"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/modules/stock/stock.controller.ts"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "coverage",
+    "coverageThreshold": {
+      "global": {
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
     "testEnvironment": "node"
   },
   "dependencies": {
