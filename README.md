@@ -6,6 +6,8 @@ Microsserviço de gerenciamento de estoque de sangue da plataforma **Sangue Soli
 
 - [Visão Geral](#visão-geral)
 - [Tecnologias](#tecnologias)
+- [Repositórios](#repositórios)
+- [Ambientes](#ambientes)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Configuração e Instalação](#configuração-e-instalação)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
@@ -13,6 +15,13 @@ Microsserviço de gerenciamento de estoque de sangue da plataforma **Sangue Soli
 - [Modelo de Dados](#modelo-de-dados)
 - [Docker](#docker)
 - [Documentação da API](#documentação-da-api)
+- [Testes](#testes)
+- [CI/CD](#cicd)
+- [Observabilidade e Logs](#observabilidade-e-logs)
+- [Banco de Dados](#banco-de-dados)
+- [Análise de Qualidade — SonarCloud](#análise-de-qualidade--sonarcloud)
+
+---
 
 ## Visão Geral
 
@@ -29,14 +38,45 @@ O **Blood Stock Service** é responsável por:
 
 `A+` `A-` `B+` `B-` `AB+` `AB-` `O+` `O-`
 
+---
+
 ## Tecnologias
 
+### Backend
 - **NestJS 11** — Framework Node.js
 - **TypeORM 0.3** — ORM para PostgreSQL
-- **PostgreSQL 16** — Banco de dados relacional
+- **PostgreSQL 16** — Banco de dados relacional (Neon — nuvem)
 - **Passport JWT** — Autenticação via token JWT
 - **Swagger + Scalar** — Documentação interativa da API
+- **Pino + BetterStack** — Logs estruturados e observabilidade
 - **Docker** — Containerização
+- **Heroku** — Deploy de produção
+- **Azure Container Apps** — Deploy de homologação
+
+### Frontend
+- **Next.js + React** — Framework frontend
+- **Vercel** — Deploy de produção
+- **Azure Container Apps** — Deploy de homologação
+
+---
+
+## Repositórios
+
+| Serviço | Repositório |
+|---|---|
+| Backend (este repo) | https://github.com/c3ny/blood-stock-service |
+| Frontend | https://github.com/c3ny/sangue-solidario-nextjs |
+
+---
+
+## Ambientes
+
+| Ambiente | Frontend | Backend | Banco (Neon) |
+|---|---|---|---|
+| **Produção** | https://sanguesolidario.vercel.app | https://blood-stock-service-48ee65468831.herokuapp.com | `blood-stock-service` |
+| **Homologação** | https://bloodstock-front-hml.ambitiousglacier-259f847e.brazilsouth.azurecontainerapps.io | https://blodstock.ambitiousglacier-259f847e.brazilsouth.azurecontainerapps.io | `bloodstock-hml` |
+
+---
 
 ## Estrutura do Projeto
 
@@ -82,16 +122,25 @@ src/
 │       ├── stock.controller.ts
 │       ├── stock.service.ts
 │       └── stock.module.ts
+├── shared/
+│   ├── filters/
+│   │   └── all-exceptions.filter.ts     # Filtro global de exceções não tratadas
+│   ├── interceptors/
+│   │   └── http-logging.interceptor.ts  # Log estruturado de requests/responses
+│   └── logger/
+│       └── app-logger.service.ts        # Serviço de logging (Pino + BetterStack)
 ├── app.module.ts
 └── main.ts
 ```
+
+---
 
 ## Configuração e Instalação
 
 ### Pré-requisitos
 
-- Node.js 20+
-- PostgreSQL 16
+- Node.js 22+
+- PostgreSQL 16 (ou acesso ao Neon)
 - npm
 
 ### Instalação local
@@ -102,6 +151,7 @@ npm install
 
 # Copiar variáveis de ambiente
 cp .env.example .env
+# edite o .env com suas credenciais
 
 # Rodar migrações
 npm run migration:run
@@ -121,23 +171,30 @@ npm run start:dev
 | `npm run migration:revert` | Reverter última migração |
 | `npm run migration:generate` | Gerar migração automática |
 | `npm run test` | Executar testes |
+| `npm run test:coverage` | Testes com relatório de cobertura (mínimo 80%) |
 | `npm run lint` | Executar linter |
+
+---
 
 ## Variáveis de Ambiente
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
 | `PORT` | Porta do servidor | `3004` |
-| `DATABASE_URL` | Connection string PostgreSQL (produção) | `postgresql://user:pass@host:5432/db` |
+| `DATABASE_URL` | Connection string PostgreSQL (produção/Neon) | `postgresql://user:pass@host:5432/db` |
 | `POSTGRES_HOST` | Host do banco (desenvolvimento) | `localhost` |
 | `POSTGRES_PORT` | Porta do banco | `5432` |
 | `POSTGRES_USERNAME` | Usuário do banco | `postgres` |
 | `POSTGRES_PASSWORD` | Senha do banco | `postgres` |
 | `POSTGRES_DATABASE` | Nome do banco | `bloodstock` |
-| `JWT_SECRET` | Chave secreta para validação JWT | `secret` |
+| `JWT_SECRET` | Chave secreta para validação JWT | gerado com `openssl rand -base64 48` |
+| `INTERNAL_SECRET` | Chave para webhooks internos | gerado com `openssl rand -base64 48` |
 | `CORS_ORIGINS` | Origens permitidas (separadas por vírgula) | `http://localhost:3000` |
+| `BETTERSTACK_SOURCE_TOKEN` | Token do source no BetterStack | obtido no painel BetterStack |
 
-> O serviço aceita tanto `DATABASE_URL` (produção/Heroku) quanto variáveis individuais (desenvolvimento local).
+> O serviço aceita tanto `DATABASE_URL` (produção/Neon) quanto variáveis individuais (desenvolvimento local).
+
+---
 
 ## API Endpoints
 
@@ -153,7 +210,7 @@ Todos os endpoints (exceto `/init`) requerem autenticação via **Bearer Token**
 | `GET` | `/api/stock/batches/:bloodType` | Listar lotes disponíveis por tipo sanguíneo |
 | `GET` | `/api/stock/history` | Histórico de movimentações |
 | `GET` | `/api/stock/report` | Gerar relatório CSV |
-| `POST` | `/api/stock/init` | Inicializar estoque (webhook interno, sem auth) |
+| `POST` | `/api/stock/init` | Inicializar estoque (webhook interno, sem auth JWT) |
 
 ### Exemplos de Request
 
@@ -193,6 +250,8 @@ POST /api/stock/batchExit
 ]
 ```
 
+---
+
 ## Modelo de Dados
 
 ```
@@ -221,107 +280,190 @@ POST /api/stock/batchExit
                                                   └─────────────────────┘
 ```
 
+---
+
 ## Docker
 
-Este repositório é o **backend principal** do PI e contém o `docker-compose.yml` que orquestra **todos os microsserviços + frontend + bancos** do projeto Sangue Solidário.
+Este repositório contém o `docker-compose.yml` que orquestra **todos os microsserviços + frontend + bancos** do projeto Sangue Solidário.
 
 ### Estrutura esperada (clonar todos os repos como irmãos)
 
 ```
 qualquer-pasta/
-├── blood-stock-service/         ← este repo (contém o docker-compose.yml e scripts)
-├── sangue-solidario-nextjs/     ← clonar lado a lado
-├── users-service/               ← clonar lado a lado
-├── donation-service/            ← clonar lado a lado
-├── cdn-service-node/            ← clonar lado a lado
-├── campaign-service/            ← clonar lado a lado
-└── appointments-service-node/   ← clonar lado a lado
+├── blood-stock-service/         ← este repo (contém o docker-compose.yml)
+├── sangue-solidario-nextjs/
+├── users-service/
+├── donation-service/
+├── cdn-service-node/
+├── campaign-service/
+└── appointments-service-node/
 ```
 
 ### Subindo o sistema completo
 
-A partir desta pasta (`blood-stock-service/`):
-
 ```bash
-# 1) Configurar variáveis de ambiente
 cp .env.example .env
 # editar .env com os secrets reais
 
-# 2) Subir todos os serviços (backend + frontend + bancos)
 docker compose up -d
-# ou: ./up.sh
-
-# 3) Verificar containers
 docker compose ps
-
-# 4) Logs
 docker compose logs -f bloodstock-service
 
-# 5) Derrubar tudo
 docker compose down
-# ou: ./down.sh
 ```
 
 Scripts auxiliares: `up.sh`, `down.sh`, `rebuild.sh` (interativo), `restart.sh` (interativo).
 
-### Subindo apenas o blood-stock isolado (modo desenvolvimento)
-
-Se quiser desenvolver **somente** este serviço sem subir todos os outros, use o compose standalone:
+### Modo standalone (só o blood-stock)
 
 ```bash
 docker compose -f docker-compose.standalone.yml up -d
 ```
 
-Esse arquivo sobe apenas `bloodstock-service` + `postgres_bloodstock` em uma rede isolada (`services-network`), com volume nomeado para persistir o banco.
-
-### Dockerfile standalone (sem compose)
-
-```bash
-docker build -t bloodstock-service .
-docker run -p 3004:3004 --env-file .env bloodstock-service
-```
-
 ### Docker Hub
 
-Imagens publicadas na organização **`firec4io`** no Docker Hub a cada push em `main`. O workflow `.github/workflows/cd.yaml` builda com TAG versionada (mesma do git, ex: `v0.7.5`) + TAG `latest` e faz push automático. O repositório é criado pelo próprio workflow se não existir (idempotente).
+Imagens publicadas na organização **`firec4io`** a cada push em `main`.
 
-Repositório público: https://hub.docker.com/r/firec4io/blood-stock-service
+| Repositório | Link |
+|---|---|
+| Organização Docker Hub | https://hub.docker.com/orgs/firec4io/repositories |
+| blood-stock-service | https://hub.docker.com/r/firec4io/blood-stock-service |
 
 ```bash
 docker pull firec4io/blood-stock-service:latest
-docker pull firec4io/blood-stock-service:v0.7.5
+docker pull firec4io/blood-stock-service:v0.7.14   # exemplo de tag versionada
 ```
 
-Secrets usados (configurados no GitHub, nunca expostos no workflow):
+O workflow CD builda com a tag semântica do git (ex: `v0.7.14`) + `latest` e faz push automático. O repositório é criado pelo próprio workflow se não existir.
 
-| Secret | Uso |
+| Secret GitHub | Uso |
 |---|---|
-| `DOCKERHUB_USERNAME` | User que faz login (orgs não fazem login direto) |
+| `DOCKERHUB_USERNAME` | Usuário que faz login |
 | `DOCKERHUB_TOKEN` | Personal Access Token |
-| `DOCKERHUB_NAMESPACE` | Org de destino (`firec4io`) |
+| `DOCKERHUB_NAMESPACE` | Organização de destino (`firec4io`) |
 
-> O Docker Hub é **acumulativo** — todas as TAGs versionadas geradas pelo CI ficam disponíveis para rollback ou inspeção, espelhando as tags do git.
+---
 
 ## Documentação da API
 
-Com o serviço rodando, acesse:
+Com o serviço rodando localmente, acesse:
 
 | Rota | Descrição |
 |------|-----------|
 | `/docs` | **Scalar** — documentação interativa moderna |
 | `/api-docs` | **Swagger UI** — documentação clássica |
 
-### SonarCloud (SAST)
+Em produção:
 
-Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`). 
-O step usa a action oficial `sonarsource/sonarcloud-github-action` e é puramente analítico — não bloqueia a esteira em caso de issues; serve para acompanhar o quality gate ao longo do tempo.
+| Ambiente | Swagger | Scalar |
+|---|---|---|
+| Produção | https://blood-stock-service-48ee65468831.herokuapp.com/api-docs | https://blood-stock-service-48ee65468831.herokuapp.com/docs |
+| Homologação | https://blodstock.ambitiousglacier-259f847e.brazilsouth.azurecontainerapps.io/api-docs | https://blodstock.ambitiousglacier-259f847e.brazilsouth.azurecontainerapps.io/docs |
 
-Projeto público no Sonar Cloud: https://sonarcloud.io/project/overview?id=$SONAR_PROJECT_KEY
+A versão exibida no Swagger reflete automaticamente a versão do `package.json` (gerada pelo CI a cada push).
 
-Secrets usados (configurados no GitHub):
+---
+
+## Testes
+
+```bash
+# Rodar todos os testes
+npm run test
+
+# Com cobertura (threshold: 80% em funções, linhas e statements)
+npm run test:coverage
+```
+
+Os testes ficam em `test/` e seguem o padrão `*.spec.ts`. A cobertura é coletada sobre `src/modules/stock/stock.controller.ts` e o relatório LCOV é gerado em `coverage/lcov.info` para consumo pelo SonarCloud.
+
+---
+
+## CI/CD
+
+### CI — `.github/workflows/ci.yaml`
+
+Dispara em **push e pull request** para `main` e `develop`.
+
+| Step | Descrição |
+|---|---|
+| Build | `npm run build` |
+| Testes + cobertura | `npm run test:coverage` — falha se abaixo de 80% |
+| Build Docker | Imagem com tag `ci-<sha>` |
+| SonarCloud | Análise estática com relatório LCOV |
+| Versionamento semântico | Lê conventional commits e bumpa `package.json` + cria tag git |
+| E-mail em falha | Notificação via Gmail para o responsável |
+
+### CD — `.github/workflows/cd.yaml`
+
+Dispara em **push para `main`**.
+
+| Step | Descrição |
+|---|---|
+| Build + push Docker Hub | Tags `:latest` e `:vX.Y.Z` para `firec4io/blood-stock-service` |
+| SonarCloud | Análise com cobertura LCOV |
+| Deploy Heroku | Push para `registry.heroku.com` + `heroku container:release` |
+
+### Secrets necessários no GitHub
 
 | Secret | Uso |
 |---|---|
-| `SONAR_TOKEN` | Token de autenticação do Sonar Cloud |
-| `SONAR_PROJECT_KEY` | Identificador do projeto no Sonar |
-| `SONAR_ORGANIZATION` | Organização no Sonar Cloud |
+| `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` / `DOCKERHUB_NAMESPACE` | Docker Hub |
+| `HEROKU_API_KEY` / `HEROKU_APP_NAME` | Deploy Heroku |
+| `SONAR_TOKEN` / `SONAR_PROJECT_KEY` / `SONAR_ORGANIZATION` | SonarCloud |
+| `GH_TOKEN` | Push de tags e commits de versão |
+| `EMAIL_ORIGIN` / `SENHA_EMAIL` / `EMAIL_DESTINO` | Notificação de falha |
+
+---
+
+## Observabilidade e Logs
+
+O serviço utiliza **Pino** para logging estruturado com envio para **BetterStack** (source: *Sangue Solidario Bloodstock*).
+
+### Comportamento por ambiente
+
+| Ambiente | Saída |
+|---|---|
+| `development` | Terminal colorido via `pino-pretty` |
+| `production` + `BETTERSTACK_SOURCE_TOKEN` | Logs enviados para BetterStack via `@logtail/pino` |
+| `production` sem token | JSON no stdout (fallback) |
+
+### Campos redactados automaticamente
+
+`body.password`, `body.token`, `body.newPassword`, `headers.authorization`, `headers.cookie` — substituídos por `[REDACTED]` antes do envio.
+
+### O que é logado
+
+- Cada request recebido (método, path, params, query, body, IP, user-agent)
+- Cada response (status, duração em ms)
+- Erros não tratados (com stack trace)
+- Operações de negócio: entrada de lote, saída FEFO, inicialização de estoque
+
+Configure `BETTERSTACK_SOURCE_TOKEN` no `.env` para habilitar o envio ao BetterStack.
+
+---
+
+## Banco de Dados
+
+Banco de dados **PostgreSQL** hospedado no **[Neon](https://neon.tech)** (serverless Postgres).
+
+| Ambiente | Projeto Neon | Conexão |
+|---|---|---|
+| Produção | `blood-stock-service` | via `DATABASE_URL` no Heroku |
+| Homologação | `bloodstock-hml` | via `DATABASE_URL` no Azure |
+
+Em desenvolvimento local, use PostgreSQL local ou Docker (via `docker-compose.standalone.yml`).
+
+---
+
+## Análise de Qualidade — SonarCloud
+
+Análise estática de segurança e qualidade roda no GitHub Actions a cada push em `main` e `develop` e em todo pull request.
+
+- **Projeto público:** https://sonarcloud.io/project/overview?id=c3ny_blood-stock-service
+- **Organização:** https://sonarcloud.io/organizations/c3ny
+
+| Secret GitHub | Uso |
+|---|---|
+| `SONAR_TOKEN` | Token de autenticação |
+| `SONAR_PROJECT_KEY` | `c3ny_blood-stock-service` |
+| `SONAR_ORGANIZATION` | `c3ny` |
