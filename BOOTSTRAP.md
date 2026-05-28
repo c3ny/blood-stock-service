@@ -107,13 +107,13 @@ docker compose logs -f
 
 ## 5. Validar
 
-| URL | Esperado |
-|---|---|
-| <http://localhost:3000> | Home Sangue Solidário carrega (mapa + listas) |
-| <http://localhost:3002/api-docs> | Swagger users-service |
-| <http://localhost:3003/api-docs> | Swagger appointments-service |
-| <http://localhost:3004/docs> | Scalar blood-stock-service |
-| <http://localhost:3006/api/docs> | Swagger campaign-service |
+| URL                              | Esperado                                      |
+| -------------------------------- | --------------------------------------------- |
+| <http://localhost:3000>          | Home Sangue Solidário carrega (mapa + listas) |
+| <http://localhost:3002/api-docs> | Swagger users-service                         |
+| <http://localhost:3003/api-docs> | Swagger appointments-service                  |
+| <http://localhost:3004/docs>     | Scalar blood-stock-service                    |
+| <http://localhost:3006/api/docs> | Swagger campaign-service                      |
 
 `docker compose ps` deve mostrar 11 containers `Up`.
 
@@ -188,6 +188,7 @@ docker compose logs --tail=50 <serviço>
 ```
 
 Causas comuns:
+
 - `.env` mal-parseado (aspas extras, espaços ao redor de `=`)
 - Var crítica faltando
 - Postgres ainda inicializando (esperar mais 30s)
@@ -218,13 +219,13 @@ Esse compose sobe apenas `bloodstock-service` + `postgres_bloodstock`, em uma re
 
 O compose unificado cria 5 redes bridge isoladas. Containers só se enxergam dentro da mesma rede:
 
-| Rede | Containers |
-|---|---|
-| `blood-users-network` | users-service + bloodstock-service + 2 Postgres + **campaign-service** (validar JWT) |
-| `donation-network` | donation-service + Mongo |
-| `cdn-network` | cdn-service |
-| `campaign-network` | campaign-service + Postgres campaign |
-| `appointments-network` | appointments-service-node + Postgres appointments + campaign-service |
+| Rede                   | Containers                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `blood-users-network`  | users-service + bloodstock-service + 2 Postgres + **campaign-service** (validar JWT) |
+| `donation-network`     | donation-service + Mongo                                                             |
+| `cdn-network`          | cdn-service                                                                          |
+| `campaign-network`     | campaign-service + Postgres campaign                                                 |
+| `appointments-network` | appointments-service-node + Postgres appointments + campaign-service                 |
 
 O `nextjs-frontend` está em **todas** as redes (precisa falar com todos os backends).
 

@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { timingSafeEqual } from 'crypto';
 
 @Injectable()
@@ -22,10 +17,7 @@ export class InternalSecretGuard implements CanActivate {
 
     const providedBuf = Buffer.from(provided);
     const expectedBuf = Buffer.from(expected);
-    if (
-      providedBuf.length !== expectedBuf.length ||
-      !timingSafeEqual(providedBuf, expectedBuf)
-    ) {
+    if (providedBuf.length !== expectedBuf.length || !timingSafeEqual(providedBuf, expectedBuf)) {
       throw new UnauthorizedException('Invalid internal secret');
     }
 

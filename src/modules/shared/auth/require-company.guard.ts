@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './skip-auth.decorator';
 
@@ -23,9 +18,7 @@ export class RequireCompanyGuard implements CanActivate {
     const companyId = request.user?.companyId;
 
     if (!companyId) {
-      throw new ForbiddenException(
-        'This endpoint requires a company account',
-      );
+      throw new ForbiddenException('This endpoint requires a company account');
     }
 
     return true;

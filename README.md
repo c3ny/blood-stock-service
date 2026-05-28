@@ -112,30 +112,30 @@ npm run start:dev
 
 ### Scripts disponíveis
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run start:dev` | Modo desenvolvimento (watch) |
-| `npm run build` | Compilar para produção |
-| `npm run start:prod` | Iniciar em produção |
-| `npm run migration:run` | Executar migrações |
-| `npm run migration:revert` | Reverter última migração |
-| `npm run migration:generate` | Gerar migração automática |
-| `npm run test` | Executar testes |
-| `npm run lint` | Executar linter |
+| Comando                      | Descrição                    |
+| ---------------------------- | ---------------------------- |
+| `npm run start:dev`          | Modo desenvolvimento (watch) |
+| `npm run build`              | Compilar para produção       |
+| `npm run start:prod`         | Iniciar em produção          |
+| `npm run migration:run`      | Executar migrações           |
+| `npm run migration:revert`   | Reverter última migração     |
+| `npm run migration:generate` | Gerar migração automática    |
+| `npm run test`               | Executar testes              |
+| `npm run lint`               | Executar linter              |
 
 ## Variáveis de Ambiente
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `PORT` | Porta do servidor | `3004` |
-| `DATABASE_URL` | Connection string PostgreSQL (produção) | `postgresql://user:pass@host:5432/db` |
-| `POSTGRES_HOST` | Host do banco (desenvolvimento) | `localhost` |
-| `POSTGRES_PORT` | Porta do banco | `5432` |
-| `POSTGRES_USERNAME` | Usuário do banco | `postgres` |
-| `POSTGRES_PASSWORD` | Senha do banco | `postgres` |
-| `POSTGRES_DATABASE` | Nome do banco | `bloodstock` |
-| `JWT_SECRET` | Chave secreta para validação JWT | `secret` |
-| `CORS_ORIGINS` | Origens permitidas (separadas por vírgula) | `http://localhost:3000` |
+| Variável            | Descrição                                  | Exemplo                               |
+| ------------------- | ------------------------------------------ | ------------------------------------- |
+| `PORT`              | Porta do servidor                          | `3004`                                |
+| `DATABASE_URL`      | Connection string PostgreSQL (produção)    | `postgresql://user:pass@host:5432/db` |
+| `POSTGRES_HOST`     | Host do banco (desenvolvimento)            | `localhost`                           |
+| `POSTGRES_PORT`     | Porta do banco                             | `5432`                                |
+| `POSTGRES_USERNAME` | Usuário do banco                           | `postgres`                            |
+| `POSTGRES_PASSWORD` | Senha do banco                             | `postgres`                            |
+| `POSTGRES_DATABASE` | Nome do banco                              | `bloodstock`                          |
+| `JWT_SECRET`        | Chave secreta para validação JWT           | `secret`                              |
+| `CORS_ORIGINS`      | Origens permitidas (separadas por vírgula) | `http://localhost:3000`               |
 
 > O serviço aceita tanto `DATABASE_URL` (produção/Heroku) quanto variáveis individuais (desenvolvimento local).
 
@@ -145,19 +145,20 @@ Todos os endpoints (exceto `/init`) requerem autenticação via **Bearer Token**
 
 ### Estoque
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `GET` | `/api/stock` | Listar estoque da empresa |
-| `POST` | `/api/stock/batchEntry` | Registrar entrada de lote |
-| `POST` | `/api/stock/batchExit` | Registrar saída de estoque (FEFO) |
-| `GET` | `/api/stock/batches/:bloodType` | Listar lotes disponíveis por tipo sanguíneo |
-| `GET` | `/api/stock/history` | Histórico de movimentações |
-| `GET` | `/api/stock/report` | Gerar relatório CSV |
-| `POST` | `/api/stock/init` | Inicializar estoque (webhook interno, sem auth) |
+| Método | Rota                            | Descrição                                       |
+| ------ | ------------------------------- | ----------------------------------------------- |
+| `GET`  | `/api/stock`                    | Listar estoque da empresa                       |
+| `POST` | `/api/stock/batchEntry`         | Registrar entrada de lote                       |
+| `POST` | `/api/stock/batchExit`          | Registrar saída de estoque (FEFO)               |
+| `GET`  | `/api/stock/batches/:bloodType` | Listar lotes disponíveis por tipo sanguíneo     |
+| `GET`  | `/api/stock/history`            | Histórico de movimentações                      |
+| `GET`  | `/api/stock/report`             | Gerar relatório CSV                             |
+| `POST` | `/api/stock/init`               | Inicializar estoque (webhook interno, sem auth) |
 
 ### Exemplos de Request
 
 **Entrada de lote:**
+
 ```json
 POST /api/stock/batchEntry
 {
@@ -173,6 +174,7 @@ POST /api/stock/batchEntry
 ```
 
 **Saída de estoque:**
+
 ```json
 POST /api/stock/batchExit
 {
@@ -185,6 +187,7 @@ POST /api/stock/batchExit
 ```
 
 **Resposta de estoque:**
+
 ```json
 [
   { "id": "uuid", "bloodType": "A+", "quantity": 8 },
@@ -294,11 +297,11 @@ docker pull firec4io/blood-stock-service:v0.7.5
 
 Secrets usados (configurados no GitHub, nunca expostos no workflow):
 
-| Secret | Uso |
-|---|---|
-| `DOCKERHUB_USERNAME` | User que faz login (orgs não fazem login direto) |
-| `DOCKERHUB_TOKEN` | Personal Access Token |
-| `DOCKERHUB_NAMESPACE` | Org de destino (`firec4io`) |
+| Secret                | Uso                                              |
+| --------------------- | ------------------------------------------------ |
+| `DOCKERHUB_USERNAME`  | User que faz login (orgs não fazem login direto) |
+| `DOCKERHUB_TOKEN`     | Personal Access Token                            |
+| `DOCKERHUB_NAMESPACE` | Org de destino (`firec4io`)                      |
 
 > O Docker Hub é **acumulativo** — todas as TAGs versionadas geradas pelo CI ficam disponíveis para rollback ou inspeção, espelhando as tags do git.
 
@@ -306,22 +309,22 @@ Secrets usados (configurados no GitHub, nunca expostos no workflow):
 
 Com o serviço rodando, acesse:
 
-| Rota | Descrição |
-|------|-----------|
-| `/docs` | **Scalar** — documentação interativa moderna |
-| `/api-docs` | **Swagger UI** — documentação clássica |
+| Rota        | Descrição                                    |
+| ----------- | -------------------------------------------- |
+| `/docs`     | **Scalar** — documentação interativa moderna |
+| `/api-docs` | **Swagger UI** — documentação clássica       |
 
 ### SonarCloud (SAST)
 
-Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`). 
+Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`).
 O step usa a action oficial `sonarsource/sonarcloud-github-action` e é puramente analítico — não bloqueia a esteira em caso de issues; serve para acompanhar o quality gate ao longo do tempo.
 
-Projeto público no Sonar Cloud: https://sonarcloud.io/project/overview?id=$SONAR_PROJECT_KEY
+Projeto público no Sonar Cloud: https://sonarcloud.io/project/overview?id=$SONAR_PROJECT_KEY.
 
 Secrets usados (configurados no GitHub):
 
-| Secret | Uso |
-|---|---|
-| `SONAR_TOKEN` | Token de autenticação do Sonar Cloud |
-| `SONAR_PROJECT_KEY` | Identificador do projeto no Sonar |
-| `SONAR_ORGANIZATION` | Organização no Sonar Cloud |
+| Secret               | Uso                                  |
+| -------------------- | ------------------------------------ | --- |
+| `SONAR_TOKEN`        | Token de autenticação do Sonar Cloud | .   |
+| `SONAR_PROJECT_KEY`  | Identificador do projeto no Sonar    |
+| `SONAR_ORGANIZATION` | Organização no Sonar Cloud           |
