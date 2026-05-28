@@ -59,7 +59,9 @@ describe('StockService', () => {
   };
 
   const dataSourceMock = {
-    transaction: jest.fn(async (callback: (trxManager: typeof manager) => unknown) => callback(manager)),
+    transaction: jest.fn(async (callback: (trxManager: typeof manager) => unknown) =>
+      callback(manager),
+    ),
   } as unknown as DataSource;
 
   beforeEach(() => {

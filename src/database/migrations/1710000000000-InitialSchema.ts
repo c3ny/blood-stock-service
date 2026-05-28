@@ -11,7 +11,7 @@ export class InitialSchema1710000000000 implements MigrationInterface {
    * Aplica a migração criando extensão e tabelas necessárias do domínio.
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"`);
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS 'pgcrypto'`);
 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS company (
