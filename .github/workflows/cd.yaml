@@ -83,7 +83,7 @@ jobs:
 
       # Sonar Qube Scanner
       - name: SonarQube
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -92,8 +92,11 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.sources=src
+            -Dsonar.tests=test
+            -Dsonar.test.inclusions=**/*.spec.ts
+            -Dsonar.exclusions=**/*.spec.ts,coverage/**,dist/**
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
       # Login no Heroku Registry
       - name: Login Heroku Container Registry
