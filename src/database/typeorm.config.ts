@@ -16,11 +16,12 @@ export const AppDataSource: DataSourceOptions = {
         password: String(process.env.POSTGRES_PASSWORD),
         database: String(process.env.POSTGRES_DATABASE),
       }),
-  ssl: process.env.DATABASE_SSL === 'false'
-    ? false
-    : process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
-    ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
-    : false,
+  ssl:
+    process.env.DATABASE_SSL === 'false'
+      ? false
+      : process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
+        ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
+        : false,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/database/migrations/*.js'],
   synchronize: false,

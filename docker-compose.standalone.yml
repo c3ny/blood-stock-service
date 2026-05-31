@@ -1,4 +1,3 @@
-
 services:
   bloodstock-service:
     container_name: bloodstock-service
@@ -8,13 +7,12 @@ services:
       target: production
       dockerfile: Dockerfile
     ports:
-      - "3004:3004"
+      - '3004:3004'
     restart: unless-stopped
     env_file:
       - .env
     networks:
       - services-network
-    
 
   postgres_bloodstock:
     container_name: postgres-bloodstock
@@ -27,12 +25,11 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: bloodstock
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - postgres-bloodstock:/var/lib/postgresql/data
     networks:
       - services-network
-
 
 volumes:
   postgres-bloodstock:
@@ -45,4 +42,3 @@ networks:
   services-network:
     name: services-network # ← adicionar
     driver: bridge
-      

@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { CompanyEntity } from '../../company/entities/company.entity';
 import { BloodType } from '../../batch/entities/blood-type.enum';
 import { BloodstockMovementEntity } from './bloodstock-movement.entity';

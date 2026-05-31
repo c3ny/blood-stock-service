@@ -1,19 +1,19 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
-import { BatchBloodEntity } from "../batch/entities/batch-blood.entity";
-import { BatchEntity } from "../batch/entities/batch.entity";
-import { BloodType } from "../batch/entities/blood-type.enum";
-import { CompanyEntity } from "../company/entities/company.entity";
-import { BatchEntryRequestDto } from "./dto/request/batch-entry-request.dto";
-import { BatchExitRequestDto } from "./dto/request/batch-exit-request.dto";
-import { IllegalArgumentException } from "../shared/errors/exceptions/illegal-argument.exception";
-import { NoSuchElementException } from "../shared/errors/exceptions/no-such-element.exception";
-import { InsufficientStockException } from "./exceptions/insufficient-stock.exception";
-import { BloodstockMovementEntity } from "./entities/bloodstock-movement.entity";
-import { BloodstockEntity } from "./entities/bloodstock.entity";
-import { InitStockRequestDto } from "./dto/request/init-stock-request.dto";
-import { AppLoggerService } from "../../shared/logger/app-logger.service";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { BatchBloodEntity } from '../batch/entities/batch-blood.entity';
+import { BatchEntity } from '../batch/entities/batch.entity';
+import { BloodType } from '../batch/entities/blood-type.enum';
+import { CompanyEntity } from '../company/entities/company.entity';
+import { BatchEntryRequestDto } from './dto/request/batch-entry-request.dto';
+import { BatchExitRequestDto } from './dto/request/batch-exit-request.dto';
+import { IllegalArgumentException } from '../shared/errors/exceptions/illegal-argument.exception';
+import { NoSuchElementException } from '../shared/errors/exceptions/no-such-element.exception';
+import { InsufficientStockException } from './exceptions/insufficient-stock.exception';
+import { BloodstockMovementEntity } from './entities/bloodstock-movement.entity';
+import { BloodstockEntity } from './entities/bloodstock.entity';
+import { InitStockRequestDto } from './dto/request/init-stock-request.dto';
+import { AppLoggerService } from '../../shared/logger/app-logger.service';
 
 @Injectable()
 export class StockService {
@@ -47,27 +47,25 @@ export class StockService {
       const movementRepo = manager.getRepository(BloodstockMovementEntity);
 
       const company = await companyRepo.findOne({ where: { id: companyId } });
-      if (!company) throw new NoSuchElementException("Empresa não encontrada");
+      if (!company) throw new NoSuchElementException('Empresa não encontrada');
 
       // Cria ou atualiza o lote
       let batch = await batchRepo.findOne({
         where: { batchCode, company: { id: companyId } },
-        relations: ["bloodDetails"],
+        relations: ['bloodDetails'],
       });
 
       if (!batch) {
         batch = batchRepo.create({
           company,
           batchCode: dto.batchCode,
-          entryDate: dto.entryDate.split("/").reverse().join("-"),
+          entryDate: dto.entryDate.split('/').reverse().join('-'),
           bloodDetails: [],
         });
         batch = await batchRepo.save(batch);
       }
 
-      for (const [bloodType, qty] of Object.entries(
-        dto.bloodQuantities ?? {},
-      )) {
+      for (const [bloodType, qty] of Object.entries(dto.bloodQuantities ?? {})) {
         if (qty <= 0) continue;
 
         const type = bloodType as BloodType;
@@ -81,13 +79,13 @@ export class StockService {
             batch,
             bloodType: type,
             quantity: qty,
-            expiryDate: dto.expiryDate.split("/").reverse().join("-"),
+            expiryDate: dto.expiryDate.split('/').reverse().join('-'),
           });
           batch.bloodDetails.push(batchBlood);
         }
 
         // Busca estoque agregado por company + bloodType
-        let stock = await stockRepo.findOne({
+        const stock = await stockRepo.findOne({
           where: { company: { id: companyId }, bloodType: type },
         });
 
@@ -123,10 +121,7 @@ export class StockService {
     });
   }
 
-  async processBatchExit(
-    companyId: string,
-    dto: BatchExitRequestDto,
-  ): Promise<void> {
+  async processBatchExit(companyId: string, dto: BatchExitRequestDto): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
       const companyRepo = manager.getRepository(CompanyEntity);
       const batchBloodRepo = manager.getRepository(BatchBloodEntity);
@@ -135,11 +130,9 @@ export class StockService {
       const batchRepo = manager.getRepository(BatchEntity);
 
       const company = await companyRepo.findOne({ where: { id: companyId } });
-      if (!company) throw new NoSuchElementException("Empresa não encontrada");
+      if (!company) throw new NoSuchElementException('Empresa não encontrada');
 
-      for (const [bloodType, totalQtyToRemove] of Object.entries(
-        dto.quantities ?? {},
-      )) {
+      for (const [bloodType, totalQtyToRemove] of Object.entries(dto.quantities ?? {})) {
         if (totalQtyToRemove <= 0) continue;
 
         const type = bloodType as BloodType;
@@ -147,21 +140,18 @@ export class StockService {
         // Busca todos os batch_blood desse tipo para essa empresa,
         // ordenados por expiryDate (FEFO - primeiro a vencer, primeiro a sair)
         const availableBatchBloods = await batchBloodRepo
-          .createQueryBuilder("bb")
-          .innerJoinAndSelect("bb.batch", "batch")
-          .innerJoin("batch.company", "company")
-          .where("company.id = :companyId", { companyId })
-          .andWhere("bb.blood_type = :bloodType", { bloodType: type })
-          .andWhere("bb.quantity > 0")
-          .andWhere("batch.exit_date IS NULL") 
-          .orderBy("bb.expiry_date", "ASC") // ← FEFO
+          .createQueryBuilder('bb')
+          .innerJoinAndSelect('bb.batch', 'batch')
+          .innerJoin('batch.company', 'company')
+          .where('company.id = :companyId', { companyId })
+          .andWhere('bb.blood_type = :bloodType', { bloodType: type })
+          .andWhere('bb.quantity > 0')
+          .andWhere('batch.exit_date IS NULL')
+          .orderBy('bb.expiry_date', 'ASC') // ← FEFO
           .getMany();
 
         // Valida se tem quantidade suficiente no total
-        const totalAvailable = availableBatchBloods.reduce(
-          (sum, bb) => sum + bb.quantity,
-          0,
-        );
+        const totalAvailable = availableBatchBloods.reduce((sum, bb) => sum + bb.quantity, 0);
         if (totalAvailable < totalQtyToRemove) {
           throw new InsufficientStockException(
             `Quantidade insuficiente de ${type}. Disponível: ${totalAvailable}, solicitado: ${totalQtyToRemove}`,
@@ -172,10 +162,7 @@ export class StockService {
         const stock = await stockRepo.findOne({
           where: { company: { id: companyId }, bloodType: type },
         });
-        if (!stock)
-          throw new NoSuchElementException(
-            `Estoque não inicializado para ${type}`,
-          );
+        if (!stock) throw new NoSuchElementException(`Estoque não inicializado para ${type}`);
 
         const oldStockQty = stock.quantity;
         let remaining = totalQtyToRemove;
@@ -216,17 +203,15 @@ export class StockService {
         });
 
         // Registra data de saída nos lotes que foram completamente esvaziados
-        const exitDate = dto.exitDate.split("/").reverse().join("-");
+        const exitDate = dto.exitDate.split('/').reverse().join('-');
         for (const batchBlood of availableBatchBloods) {
           if (batchBlood.quantity === 0) {
             const batch = await batchRepo.findOne({
               where: { id: batchBlood.batch.id },
-              relations: ["bloodDetails"],
+              relations: ['bloodDetails'],
             });
             if (batch) {
-              const allEmpty = batch.bloodDetails.every(
-                (d) => d.quantity === 0,
-              );
+              const allEmpty = batch.bloodDetails.every((d) => d.quantity === 0);
               if (allEmpty) {
                 batch.exitDate = exitDate;
                 await batchRepo.save(batch);
@@ -239,20 +224,20 @@ export class StockService {
   }
 
   // stock.service.ts
-async getAvailableBatchesByBloodType(companyId: string, bloodType: string): Promise<any[]> {
-  const batchBloodRepo = this.dataSource.getRepository(BatchBloodEntity);
+  async getAvailableBatchesByBloodType(companyId: string, bloodType: string): Promise<any[]> {
+    const batchBloodRepo = this.dataSource.getRepository(BatchBloodEntity);
 
-  return batchBloodRepo
-    .createQueryBuilder('bb')
-    .innerJoinAndSelect('bb.batch', 'batch')
-    .innerJoin('batch.company', 'company')
-    .where('company.id = :companyId', { companyId })
-    .andWhere('bb.blood_type = :bloodType', { bloodType })
-    .andWhere('bb.quantity > 0')
-    .andWhere('batch.exit_date IS NULL')
-    .orderBy('bb.expiry_date', 'ASC')
-    .getMany();
-}
+    return batchBloodRepo
+      .createQueryBuilder('bb')
+      .innerJoinAndSelect('bb.batch', 'batch')
+      .innerJoin('batch.company', 'company')
+      .where('company.id = :companyId', { companyId })
+      .andWhere('bb.blood_type = :bloodType', { bloodType })
+      .andWhere('bb.quantity > 0')
+      .andWhere('batch.exit_date IS NULL')
+      .orderBy('bb.expiry_date', 'ASC')
+      .getMany();
+  }
 
   async initializeCompanyStock(dto: InitStockRequestDto): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
@@ -297,7 +282,7 @@ async getAvailableBatchesByBloodType(companyId: string, bloodType: string): Prom
     return this.movementRepository.find({
       where: { bloodstock: { company: { id: companyId } } },
       relations: { bloodstock: true, batch: true },
-      order: { actionDate: "DESC" },
+      order: { actionDate: 'DESC' },
     });
   }
 }

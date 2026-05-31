@@ -215,6 +215,7 @@ Todos os endpoints (exceto `/init`) requerem autenticação via **Bearer Token**
 ### Exemplos de Request
 
 **Entrada de lote:**
+
 ```json
 POST /api/stock/batchEntry
 {
@@ -230,6 +231,7 @@ POST /api/stock/batchEntry
 ```
 
 **Saída de estoque:**
+
 ```json
 POST /api/stock/batchExit
 {
@@ -242,6 +244,7 @@ POST /api/stock/batchExit
 ```
 
 **Resposta de estoque:**
+
 ```json
 [
   { "id": "uuid", "bloodType": "A+", "quantity": 8 },
@@ -348,10 +351,10 @@ O workflow CD builda com a tag semântica do git (ex: `v0.7.14`) + `latest` e fa
 
 Com o serviço rodando localmente, acesse:
 
-| Rota | Descrição |
-|------|-----------|
-| `/docs` | **Scalar** — documentação interativa moderna |
-| `/api-docs` | **Swagger UI** — documentação clássica |
+| Rota        | Descrição                                    |
+| ----------- | -------------------------------------------- |
+| `/docs`     | **Scalar** — documentação interativa moderna |
+| `/api-docs` | **Swagger UI** — documentação clássica       |
 
 Em produção:
 
@@ -376,9 +379,10 @@ npm run test:coverage
 
 Os testes ficam em `test/` e seguem o padrão `*.spec.ts`. A cobertura é coletada sobre `src/modules/stock/stock.controller.ts` e o relatório LCOV é gerado em `coverage/lcov.info` para consumo pelo SonarCloud.
 
----
+Análise estática de segurança roda no GitHub Actions a cada push em `main` (`.github/workflows/cd.yaml`) **e** em todo PR/push para `develop` (`.github/workflows/ci.yaml`).
+O step usa a action oficial `sonarsource/sonarcloud-github-action` e é puramente analítico — não bloqueia a esteira em caso de issues; serve para acompanhar o quality gate ao longo do tempo.
 
-## CI/CD
+Projeto público no Sonar Cloud: https://sonarcloud.io/project/overview?id=$SONAR_PROJECT_KEY.
 
 ### CI — `.github/workflows/ci.yaml`
 

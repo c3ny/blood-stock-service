@@ -40,7 +40,11 @@ export class StockController {
   constructor(private readonly stockService: StockService) {}
 
   @ApiOperation({ summary: 'Listar estoque da empresa' })
-  @ApiResponse({ status: 200, description: 'Estoque retornado com sucesso', type: [BatchResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Estoque retornado com sucesso',
+    type: [BatchResponseDto],
+  })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Get()
   findByCompany(@Req() req: Request): Promise<BatchResponseDto[]> {
@@ -51,7 +55,11 @@ export class StockController {
   }
 
   @ApiOperation({ summary: 'Entrada de estoque por lote' })
-  @ApiResponse({ status: 201, description: 'Entrada registrada, retorna estoque atualizado', type: [BatchResponseDto] })
+  @ApiResponse({
+    status: 201,
+    description: 'Entrada registrada, retorna estoque atualizado',
+    type: [BatchResponseDto],
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Post('/batchEntry')
@@ -71,19 +79,17 @@ export class StockController {
   @ApiResponse({ status: 200, description: 'Lotes disponíveis ordenados por vencimento' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Get('/batches/:bloodType')
-  getAvailableBatches(
-    @Req() req: Request,
-    @Param('bloodType') bloodType: string,
-  ): Promise<any[]> {
+  getAvailableBatches(@Req() req: Request, @Param('bloodType') bloodType: string): Promise<any[]> {
     const companyId = (req.user as AuthenticatedUser).companyId!;
-    return this.stockService.getAvailableBatchesByBloodType(
-      companyId,
-      bloodType,
-    );
+    return this.stockService.getAvailableBatchesByBloodType(companyId, bloodType);
   }
 
   @ApiOperation({ summary: 'Saída de estoque (regra FEFO)' })
-  @ApiResponse({ status: 200, description: 'Saída registrada, retorna estoque atualizado', type: [BatchResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Saída registrada, retorna estoque atualizado',
+    type: [BatchResponseDto],
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos ou estoque insuficiente' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Post('/batchExit')
@@ -112,10 +118,7 @@ export class StockController {
   @ApiResponse({ status: 200, description: 'Arquivo CSV gerado' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
   @Get('/report')
-  async generateReport(
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
+  async generateReport(@Req() req: Request, @Res() res: Response): Promise<void> {
     const companyId = (req.user as AuthenticatedUser).companyId!;
     const stockList = await this.stockService.findByCompany(companyId);
 
@@ -125,10 +128,7 @@ export class StockController {
     ].join('\n');
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="stock_report.csv"',
-    );
+    res.setHeader('Content-Disposition', 'attachment; filename="stock_report.csv"');
     res.status(HttpStatus.OK).send(csvContent);
   }
 
